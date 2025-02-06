@@ -11,6 +11,6 @@ repository = "https://github.com/envoyproxy/dynamic-modules-example"
 envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "78efd97" }
 
 [lib]
-name = "examplemodule"
+name = "rust_module"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
