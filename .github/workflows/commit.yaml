@@ -91,7 +91,7 @@ jobs:
 
       - name: Push as latest
         if: github.event_name == 'push'
-        run:
+        run: |
           docker tag ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }} ghcr.io/envoyproxy/dynamic-modules-examples:latest
           docker push ghcr.io/envoyproxy/dynamic-modules-examples:latest
 
