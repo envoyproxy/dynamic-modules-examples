@@ -121,7 +121,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           cache: false
-          go-version-file: go.mod
+          go-version-file: integration/go.mod
       - uses: actions/cache@v4
         with:
           path: |
