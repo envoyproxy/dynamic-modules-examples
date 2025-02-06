@@ -1,0 +1,16 @@
+
+[package]
+name = "envoy-proxy-dynamic-modules-rust-sdk-examples"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/envoyproxy/dynamic-modules-example"
+
+[dependencies]
+# The SDK version must match the Envoy version due to the strict compatibility requirements.
+envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "78efd97"}
+
+[lib]
+name = "lib"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
