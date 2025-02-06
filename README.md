@@ -15,18 +15,19 @@ Future examples will be added in other languages once the support is available.
 This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
 how to setup the project, how to build it, and how to test it, etc.
 
-## Build
+## Dvelopment
 
 ### Rust Dynamic Modules
 
 To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
 
 ```
-cargo build --manifest-path rust/Cargo.toml
-cargo test --manifest-path rust/Cargo.toml
+cd rust
+cargo build
+cargo test
+cargo cargo clippy -- -D warnings
+cargo fmt --all -- --check
 ```
-
-where `--manifest-path` is not required if you are in the `rust` directory.
 
 ### Envoy + Dynamic Modules Docker Image
 
