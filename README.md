@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: [78efd97]
+> Envoy Version: [80c1ac2143a7a73932c9dff814d38fd6867fe691]
 
 This repository hosts examples of dynamic modules for [Envoy] to extend its functionality.
 The high level documentation is available [here][High Level Doc]. In short, a dynamic module is a shared library
@@ -39,6 +39,6 @@ docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd
 
 where `--platform` is optional and can be used to build for multiple platforms.
 
-[78efd97]: https://github.com/envoyproxy/envoy/tree/78efd97
+[78efd97]: https://github.com/envoyproxy/envoy/tree/80c1ac2143a7a73932c9dff814d38fd6867fe691
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
