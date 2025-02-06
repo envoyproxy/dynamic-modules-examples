@@ -99,18 +99,38 @@ jobs:
           push: true
           tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }},ghcr.io/envoyproxy/dynamic-modules-examples:latest
 
-  e2e_test:
+  integration_test:
     needs: [docker_build]
-    name: E2E Test (${{ matrix.platform.arch }})
+    name: Integration Test (${{ matrix.platform.arch }})
     runs-on: ${{ matrix.platform.os }}
+    defaults:
+      run:
+        working-directory: ./integration
     strategy:
       fail-fast: false
       matrix:
         platform:
           - os: ubuntu-22.04
             arch: amd64
-          - os: ubuntu-22.04-arm
-            arch: arm64
+          # TODO: fix
+          # - os: ubuntu-22.04-arm
+          #   arch: arm64
 
     steps:
-    - run: echo 'TODO'
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version-file: integration/go.mod
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ runner.os }}
+      - name: Run integration tests
+        env:
+          ENVOY_IMAGE: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
+        run: go test -v -count=1 ./...
