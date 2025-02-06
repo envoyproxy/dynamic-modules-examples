@@ -14,13 +14,18 @@ Future examples will be added in other languages once the support is available.
 
 ## Build
 
+### Rust
 
-To build and test the modules locally without Envoy, you can use `cargo` to build them.
+To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
 
 ```
 cargo build --manifest-path rust/Cargo.toml
 cargo test --manifest-path rust/Cargo.toml
 ```
+
+where `--manifest-path` is not required if you are in the `rust` directory.
+
+### Envoy + Dynamic Modules Docker Image
 
 To build the example modules and bundle them with Envoy, simply run
 
