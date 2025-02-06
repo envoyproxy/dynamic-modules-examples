@@ -17,7 +17,7 @@ how to setup the project, how to build it, and how to test it, etc.
 
 ## Build
 
-### Rust
+### Rust Dynamic Modules
 
 To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
 
