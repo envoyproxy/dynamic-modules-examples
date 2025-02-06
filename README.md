@@ -12,6 +12,33 @@ like Lua filters, Wasm filters, or External Processors.
 Currently, the only language supported is Rust, so this repository contains examples of dynamic modules written in Rust.
 Future examples will be added in other languages once the support is available.
 
+This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
+how to setup the project, how to build it, and how to test it, etc.
+
+## Dvelopment
+
+### Rust Dynamic Modules
+
+To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
+
+```
+cd rust
+cargo build
+cargo test
+cargo cargo clippy -- -D warnings
+cargo fmt --all -- --check
+```
+
+### Envoy + Dynamic Modules Docker Image
+
+To build the example modules and bundle them with Envoy, simply run
+
+```
+docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd64,linux/arm64]
+```
+
+where `--platform` is optional and can be used to build for multiple platforms.
+
 [78efd97]: https://github.com/envoyproxy/envoy/tree/78efd97
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
