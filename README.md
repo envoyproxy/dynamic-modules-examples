@@ -17,7 +17,7 @@ how to setup the project, how to build it, and how to test it, etc.
 
 ## Dvelopment
 
-### Rust Dynamic Modules
+### Rust Dynamic Module
 
 To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
 
@@ -29,7 +29,7 @@ cargo cargo clippy -- -D warnings
 cargo fmt --all -- --check
 ```
 
-### Envoy + Dynamic Modules Docker Image
+### Build Envoy + Rust Dynamic Module Docker Image
 
 To build the example modules and bundle them with Envoy, simply run
 
@@ -38,6 +38,23 @@ docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd
 ```
 
 where `--platform` is optional and can be used to build for multiple platforms.
+
+### Run Envoy + Rust Dynamic Module Docker Image
+
+The example Envoy configuration yaml is in `integration/envoy.yaml` which is also used
+to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
+
+```
+docker run -p 1062:1062  -v $(pwd):/examples -w /examples/integration envoy-with-dynamic-modules:latest --config-path ./envoy.yaml
+```
+
+Then execute, for example, the following command to test the `echo` filter:
+
+```
+curl localhost:1062/uuid
+```
+
+to make sure the (passthrough) filter is working.
 
 [78efd97]: https://github.com/envoyproxy/envoy/tree/80c1ac2143a7a73932c9dff814d38fd6867fe691
 [Envoy]: https://github.com/envoyproxy/envoy

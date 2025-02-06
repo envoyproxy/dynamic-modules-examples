@@ -31,6 +31,8 @@ func TestIntegration(t *testing.T) {
 		"--concurrency", "1",
 		"--config-path", "envoy.yaml",
 	)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
 	cmd.Env = append(os.Environ(), "ENVOY_UID=0")
 	require.NoError(t, cmd.Start())
 	t.Cleanup(func() {
