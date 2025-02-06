@@ -8,7 +8,7 @@ repository = "https://github.com/envoyproxy/dynamic-modules-example"
 
 [dependencies]
 # The SDK version must match the Envoy version due to the strict compatibility requirements.
-envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "78efd97" }
+envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "80c1ac2143a7a73932c9dff814d38fd6867fe691" }
 
 [lib]
 name = "rust_module"

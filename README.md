@@ -56,6 +56,17 @@ curl localhost:1062/uuid
 
 to make sure the (passthrough) filter is working.
 
-[78efd97]: https://github.com/envoyproxy/envoy/tree/80c1ac2143a7a73932c9dff814d38fd6867fe691
+
+## Update Envoy Version
+
+To update the Envoy version used in this repository, execute the following command:
+
+```
+CURRENT_VERSION="$(cat ENVOY_VERSION)"
+NEW_VERSION=80c1ac2143a7a73932c9dff814d38fd6867fe691 # Whatever the head commit in envoyproxy/envoy repo.
+grep -rlF "${CURRENT_VERSION}" . | xargs sed -i "s/${CURRENT_VERSION}/${NEW_VERSION}/g"
+```
+
+[80c1ac2143a7a73932c9dff814d38fd6867fe691]: https://github.com/envoyproxy/envoy/tree/80c1ac2143a7a73932c9dff814d38fd6867fe691
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
