@@ -87,6 +87,7 @@ jobs:
           # TODO: setup caches.
           platforms: linux/amd64,linux/arm64
           push: true
+          load: true
           tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
 
       - name: Push as latest
