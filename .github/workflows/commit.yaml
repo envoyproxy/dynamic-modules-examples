@@ -83,18 +83,21 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        if: github.event_name != 'push'
         with:
           # TODO: setup caches.
           platforms: linux/amd64,linux/arm64
           push: true
-          load: true
           tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
 
-      - name: Push as latest
+      - name: Build and push
+        uses: docker/build-push-action@v6
         if: github.event_name == 'push'
-        run: |
-          docker tag ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }} ghcr.io/envoyproxy/dynamic-modules-examples:latest
-          docker push ghcr.io/envoyproxy/dynamic-modules-examples:latest
+        with:
+          # TODO: setup caches.
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }},ghcr.io/envoyproxy/dynamic-modules-examples:latest
 
   e2e_test:
     needs: [docker_build]
