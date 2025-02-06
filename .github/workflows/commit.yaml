@@ -62,6 +62,7 @@ jobs:
         run: cargo test --verbose
 
   docker_build:
+    name: Build and Push multi-arch Docker image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -85,6 +86,7 @@ jobs:
         with:
           # TODO: setup caches.
           platforms: linux/amd64,linux/arm64
+          push: true
           tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
 
       - name: Push as latest
@@ -94,6 +96,7 @@ jobs:
           docker push ghcr.io/envoyproxy/dynamic-modules-examples:latest
 
   e2e_test:
+    needs: [docker_build]
     name: E2E Test (${{ matrix.platform.arch }})
     runs-on: ${{ matrix.platform.os }}
     strategy:
