@@ -15,7 +15,7 @@ Future examples will be added in other languages once the support is available.
 This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
 how to setup the project, how to build it, and how to test it, etc.
 
-## Dvelopment
+## Development
 
 ### Rust Dynamic Module
 
@@ -45,7 +45,7 @@ The example Envoy configuration yaml is in `integration/envoy.yaml` which is als
 to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
 
 ```
-docker run -p 1062:1062  -v $(pwd):/examples -w /examples/integration envoy-with-dynamic-modules:latest --config-path ./envoy.yaml
+docker run --network host -v $(pwd):/examples -w /examples/integration envoy-with-dynamic-modules:latest --config-path ./envoy.yaml
 ```
 
 Then execute, for example, the following command to test the `echo` filter:
@@ -63,7 +63,7 @@ To update the Envoy version used in this repository, execute the following comma
 
 ```
 CURRENT_VERSION="$(cat ENVOY_VERSION)"
-NEW_VERSION=80c1ac2143a7a73932c9dff814d38fd6867fe691 # Whatever the head commit in envoyproxy/envoy repo.
+NEW_VERSION=80c1ac2143a7a73932c9dff814d38fd6867fe691 # Whatever the commit in envoyproxy/envoy repo.
 grep -rlF "${CURRENT_VERSION}" . | xargs sed -i "s/${CURRENT_VERSION}/${NEW_VERSION}/g"
 ```
 

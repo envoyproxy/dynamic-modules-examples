@@ -17,7 +17,7 @@ fn init() -> bool {
 /// This is the entrypoint every time a new HTTP filter is created via the DynamicModuleFilter config.
 ///
 /// Each argument matches the corresponding argument in the Envoy config here:
-/// https://storage.googleapis.com/envoy-pr/be95c85/docs/api-v3/extensions/filters/http/dynamic_modules/v3/dynamic_modules.proto.html#envoy-v3-api-msg-extensions-filters-http-dynamic-modules-v3-dynamicmodulefilter
+/// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
 fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     _envoy_filter_config: &mut EC,
     filter_name: &str,

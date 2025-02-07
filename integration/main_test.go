@@ -27,7 +27,7 @@ func TestIntegration(t *testing.T) {
 	cmd := exec.Command(
 		"docker",
 		"run",
-		"-p", "1062:1062",
+		"--network", "host",
 		"-v", cwd+":/integration",
 		"-w", "/integration",
 		envoyImage,
@@ -42,9 +42,9 @@ func TestIntegration(t *testing.T) {
 		require.NoError(t, cmd.Process.Kill())
 	})
 
-	// Let's wait at least 10 seconds for Envoy to start since it might take a while
+	// Let's wait at least 5 seconds for Envoy to start since it might take a while
 	// to pull the image.
-	time.Sleep(10 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	t.Run("health checking", func(t *testing.T) {
 		require.Eventually(t, func() bool {
