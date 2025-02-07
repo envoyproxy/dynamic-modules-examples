@@ -7,7 +7,12 @@ declare_init_functions!(init, new_http_filter_config_fn);
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::ProgramInitFunction`].
 ///
-/// This is called exactly once when the module is loaded.
+/// This is called exactly once when the module is loaded. It can be used to
+/// initialize global state as well as check the runtime environment to ensure that
+/// the module is running in a supported environment.
+///
+/// Returning `false` will cause Envoy to reject the config hence the
+/// filter will not be loaded.
 fn init() -> bool {
     true
 }
@@ -21,10 +26,10 @@ fn init() -> bool {
 fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     _envoy_filter_config: &mut EC,
     filter_name: &str,
-    _filter_config: &str,
+    filter_config: &str,
 ) -> Option<Box<dyn HttpFilterConfig<EC, EHF>>> {
     match filter_name {
-        "passthrough" => Some(Box::new(PassthroughHttpFilterConfig {})),
+        "passthrough" => Some(Box::new(PassthroughHttpFilterConfig::new(filter_config))),
         _ => panic!("Unknown filter name: {}", filter_name),
     }
 }
