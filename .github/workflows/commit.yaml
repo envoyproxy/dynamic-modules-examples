@@ -112,9 +112,8 @@ jobs:
         platform:
           - os: ubuntu-22.04
             arch: amd64
-          # TODO: fix
-          # - os: ubuntu-22.04-arm
-          #   arch: arm64
+          - os: ubuntu-22.04-arm
+            arch: arm64
 
     steps:
       - name: Checkout

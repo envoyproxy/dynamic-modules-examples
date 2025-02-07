@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:1.84 AS rust_builder
+FROM --platform=$TARGETPLATFORM rust:1.84 AS rust_builder
 
 # We need libclang to do the bindgen.
 RUN apt update && apt install -y clang
@@ -16,6 +16,6 @@ COPY ./rust .
 RUN cargo build
 
 # Finally, copy the built library to the final image.
-FROM --platform=$BUILDPLATFORM envoyproxy/envoy-dev:80c1ac2143a7a73932c9dff814d38fd6867fe691 AS envoy
+FROM --platform=$TARGETPLATFORM envoyproxy/envoy-dev:80c1ac2143a7a73932c9dff814d38fd6867fe691 AS envoy
 ENV ENVOY_DYNAMIC_MODULES_SEARCH_PATH=/usr/local/lib
 COPY --from=rust_builder /app/target/debug/librust_module.so /usr/local/lib/librust_module.so
