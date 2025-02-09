@@ -25,7 +25,7 @@ To build and test the modules locally without Envoy, you can use `cargo` to buil
 cd rust
 cargo build
 cargo test
-cargo cargo clippy -- -D warnings
+cargo clippy -- -D warnings
 cargo fmt --all -- --check
 ```
 
