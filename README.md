@@ -41,20 +41,18 @@ where `--platform` is optional and can be used to build for multiple platforms.
 
 ### Run Envoy + Rust Dynamic Module Docker Image
 
-The example Envoy configuration yaml is in `integration/envoy.yaml` which is also used
+The example Envoy configuration yaml is in [`integration/envoy.yaml`](integration/envoy.yaml) which is also used
 to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
 
 ```
 docker run --network host -v $(pwd):/examples -w /examples/integration envoy-with-dynamic-modules:latest --config-path ./envoy.yaml
 ```
 
-Then execute, for example, the following command to test the `echo` filter:
+Then execute, for example, the following command to test the passthrough and access log filters:
 
 ```
 curl localhost:1062/uuid
 ```
-
-to make sure the (passthrough) filter is working.
 
 
 ## Update Envoy Version
