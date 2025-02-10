@@ -23,7 +23,7 @@ impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF>
     for PassthroughHttpFilterConfig
 {
     /// This is called for each new HTTP filter.
-    fn new_http_filter(&self, _envoy: &mut EC) -> Box<dyn HttpFilter<EHF>> {
+    fn new_http_filter(&mut self, _envoy: &mut EC) -> Box<dyn HttpFilter<EHF>> {
         Box::new(PassthroughHttpFilter {})
     }
 }

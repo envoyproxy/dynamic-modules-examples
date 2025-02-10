@@ -2,10 +2,14 @@ package main
 
 import (
 	_ "embed"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,7 +17,15 @@ import (
 )
 
 //go:embed envoy.yaml
-var envoyYaml string
+var originalEnvoyYaml string
+
+func requireEnvoyYaml(t *testing.T, tmpdir string) (yamlPath string) {
+	yamlPath = tmpdir + "/envoy.yaml"
+	replacedYaml := strings.ReplaceAll(originalEnvoyYaml, "/tmp/", tmpdir)
+	require.NoError(t, os.WriteFile(yamlPath, []byte(replacedYaml), 0644))
+	fmt.Println("Envoy config:", replacedYaml)
+	return
+}
 
 func TestIntegration(t *testing.T) {
 	envoyImage := "envoy-with-dynamic-modules:latest"
@@ -24,15 +36,22 @@ func TestIntegration(t *testing.T) {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
+	tmpdir := t.TempDir()
+	// Grant write permission to the tmpdir for the envoy process.
+	require.NoError(t, exec.Command("chmod", "777", tmpdir).Run())
+	yamlPath := requireEnvoyYaml(t, tmpdir)
+
 	cmd := exec.Command(
 		"docker",
 		"run",
 		"--network", "host",
 		"-v", cwd+":/integration",
-		"-w", "/integration",
+		"-v", tmpdir+":"+tmpdir,
+		"-w", tmpdir,
 		envoyImage,
 		"--concurrency", "1",
-		"--config-path", "envoy.yaml",
+		"--config-path", yamlPath,
+		"--base-id", strconv.Itoa(time.Now().Nanosecond()),
 	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -64,6 +83,52 @@ func TestIntegration(t *testing.T) {
 			}
 			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
 			return resp.StatusCode == 200
+		}, 30*time.Second, 1*time.Second)
+	})
+
+	t.Run("check access log", func(t *testing.T) {
+		require.Eventually(t, func() bool {
+			// List files in the access log directory
+			files, err := os.ReadDir(tmpdir)
+			require.NoError(t, err)
+
+			var accessLogFiles []string
+			for _, file := range files {
+				if strings.HasPrefix(file.Name(), "access_log") {
+					accessLogFiles = append(accessLogFiles, file.Name())
+				}
+			}
+
+			if len(accessLogFiles) == 0 {
+				t.Logf("No access log files found yet")
+				return false
+			}
+
+			// Read the first access log file
+			file, err := os.Open(tmpdir + "/" + accessLogFiles[0])
+			require.NoError(t, err)
+			defer file.Close()
+			content, err := io.ReadAll(file)
+			require.NoError(t, err)
+
+			type logLine struct {
+				RequestHeaders  []string `json:"request_headers"`
+				ResponseHeaders []string `json:"response_headers"`
+			}
+
+			var found bool
+			for _, line := range strings.Split(string(content), "\n") {
+				t.Log(line)
+				if line == "" {
+					continue
+				}
+				var log logLine
+				require.NoError(t, json.Unmarshal([]byte(line), &log))
+				if len(log.RequestHeaders) > 0 && len(log.ResponseHeaders) > 0 {
+					found = true
+				}
+			}
+			return found
 		}, 30*time.Second, 1*time.Second)
 	})
 }

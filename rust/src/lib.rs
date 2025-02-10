@@ -1,7 +1,7 @@
 use envoy_proxy_dynamic_modules_rust_sdk::*;
 
-mod passthrough;
-use passthrough::*;
+mod http_access_logger;
+mod http_passthrough;
 
 declare_init_functions!(init, new_http_filter_config_fn);
 
@@ -23,13 +23,19 @@ fn init() -> bool {
 ///
 /// Each argument matches the corresponding argument in the Envoy config here:
 /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+///
+/// Returns None if the filter name or config is determined to be invalid by each filter's `new` function.
 fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     _envoy_filter_config: &mut EC,
     filter_name: &str,
     filter_config: &str,
 ) -> Option<Box<dyn HttpFilterConfig<EC, EHF>>> {
     match filter_name {
-        "passthrough" => Some(Box::new(PassthroughHttpFilterConfig::new(filter_config))),
+        "passthrough" => Some(Box::new(
+            http_passthrough::PassthroughHttpFilterConfig::new(filter_config),
+        )),
+        "access_logger" => http_access_logger::AccessLoggerHttpFilterConfig::new(filter_config)
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
         _ => panic!("Unknown filter name: {}", filter_name),
     }
 }
