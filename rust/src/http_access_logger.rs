@@ -15,26 +15,26 @@ use std::thread;
 ///
 /// The number of worker threads is configurable via the `num_workers` field in the filter config.
 /// The directory to write the log files to is configurable via the `dirname` field in the filter config.
-pub struct AccessLoggerHttpFilterConfig {
+pub struct FilterConfig {
     tx: mpsc::Sender<String>,
 }
 
 /// This will be parsed from filter_config passed to the constructor coming from Envoy config.
 #[derive(Serialize, Deserialize, Debug)]
-struct FilterConfig {
+struct FilterConfigData {
     // The dirname to write the log file to.
     dirname: String,
     // The number of workers to spawn.
     num_workers: usize,
 }
 
-impl AccessLoggerHttpFilterConfig {
-    /// This is the constructor for the [`AccessLoggerHttpFilterConfig`].
+impl FilterConfig {
+    /// This is the constructor for the [`FilterConfig`].
     ///
     /// filter_config is the filter config from the Envoy config here:
     /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
     pub fn new(filter_config: &str) -> Option<Self> {
-        let filter_config: FilterConfig = match serde_json::from_str(filter_config) {
+        let filter_config: FilterConfigData = match serde_json::from_str(filter_config) {
             Ok(cfg) => cfg,
             Err(err) => {
                 eprintln!("Error parsing filter config: {}", err);
@@ -75,13 +75,11 @@ impl AccessLoggerHttpFilterConfig {
     }
 }
 
-impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF>
-    for AccessLoggerHttpFilterConfig
-{
+impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF> for FilterConfig {
     /// This is called for each new HTTP filter.
     fn new_http_filter(&mut self, _envoy: &mut EC) -> Box<dyn HttpFilter<EHF>> {
         let tx = self.tx.clone();
-        Box::new(AccessLoggerHttpFilter {
+        Box::new(Filter {
             tx,
             request_headers: Vec::new(),
             response_headers: Vec::new(),
@@ -90,7 +88,7 @@ impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF>
 }
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::HttpFilter`] trait.
-pub struct AccessLoggerHttpFilter {
+pub struct Filter {
     tx: mpsc::Sender<String>,
     request_headers: Vec<String>,
     response_headers: Vec<String>,
@@ -99,7 +97,7 @@ pub struct AccessLoggerHttpFilter {
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::HttpFilter`] trait.
 ///
 /// Default implementation of all methods is to return `Continue`.
-impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for AccessLoggerHttpFilter {
+impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
     fn on_request_headers(
         &mut self,
         envoy_filter: &mut EHF,
@@ -141,7 +139,7 @@ struct LogMessage {
     response_headers: Vec<String>,
 }
 
-impl Drop for AccessLoggerHttpFilter {
+impl Drop for Filter {
     fn drop(&mut self) {
         let message = serde_json::to_string(&LogMessage {
             request_headers: self.request_headers.clone(),
@@ -166,7 +164,7 @@ mod tests {
             r#"{{"dirname": "{}", "num_workers": 1}}"#,
             tmpdir.path().display()
         );
-        let config = AccessLoggerHttpFilterConfig::new(&filter_config).unwrap();
+        let config = FilterConfig::new(&filter_config).unwrap();
         config.tx.clone().send("foo".to_string()).unwrap();
 
         // Sleep for a bit to let the worker thread write the log.
@@ -180,7 +178,7 @@ mod tests {
     #[test]
     fn test_access_logger_http_filter() {
         let (tx, rx) = mpsc::channel::<String>();
-        let mut access_logger_filter = AccessLoggerHttpFilter {
+        let mut access_logger_filter = Filter {
             tx,
             request_headers: Vec::new(),
             response_headers: Vec::new(),

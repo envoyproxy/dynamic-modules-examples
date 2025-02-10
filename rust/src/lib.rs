@@ -31,10 +31,8 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     filter_config: &str,
 ) -> Option<Box<dyn HttpFilterConfig<EC, EHF>>> {
     match filter_name {
-        "passthrough" => Some(Box::new(
-            http_passthrough::PassthroughHttpFilterConfig::new(filter_config),
-        )),
-        "access_logger" => http_access_logger::AccessLoggerHttpFilterConfig::new(filter_config)
+        "passthrough" => Some(Box::new(http_passthrough::FilterConfig::new(filter_config))),
+        "access_logger" => http_access_logger::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
         _ => panic!("Unknown filter name: {}", filter_name),
     }
