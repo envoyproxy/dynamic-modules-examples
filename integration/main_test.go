@@ -65,28 +65,28 @@ func TestIntegration(t *testing.T) {
 	// to pull the image.
 	time.Sleep(5 * time.Second)
 
-	t.Run("health checking", func(t *testing.T) {
-		require.Eventually(t, func() bool {
-			req, err := http.NewRequest("GET", "http://localhost:1062/uuid", nil)
-			require.NoError(t, err)
+	t.Run("http_access_logger", func(t *testing.T) {
+		t.Run("health checking", func(t *testing.T) {
+			require.Eventually(t, func() bool {
+				req, err := http.NewRequest("GET", "http://localhost:1062/uuid", nil)
+				require.NoError(t, err)
 
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				t.Logf("Envoy not ready yet: %v", err)
-				return false
-			}
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Logf("Envoy not ready yet: %v", err)
-				return false
-			}
-			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
-			return resp.StatusCode == 200
-		}, 30*time.Second, 1*time.Second)
-	})
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					t.Logf("Envoy not ready yet: %v", err)
+					return false
+				}
+				defer resp.Body.Close()
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Logf("Envoy not ready yet: %v", err)
+					return false
+				}
+				t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+				return resp.StatusCode == 200
+			}, 30*time.Second, 1*time.Second)
+		})
 
-	t.Run("check access log", func(t *testing.T) {
 		require.Eventually(t, func() bool {
 			// List files in the access log directory
 			files, err := os.ReadDir(tmpdir)
@@ -130,5 +130,34 @@ func TestIntegration(t *testing.T) {
 			}
 			return found
 		}, 30*time.Second, 1*time.Second)
+	})
+
+	t.Run("http_random_auth", func(t *testing.T) {
+		got200 := false
+		got403 := false
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1063/uuid", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+			if resp.StatusCode == 200 {
+				got200 = true
+			}
+			if resp.StatusCode == 403 {
+				got403 = true
+			}
+			return got200 && got403
+		}, 30*time.Second, 200*time.Millisecond)
 	})
 }
