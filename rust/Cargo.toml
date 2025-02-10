@@ -8,7 +8,12 @@ repository = "https://github.com/envoyproxy/dynamic-modules-example"
 
 [dependencies]
 # The SDK version must match the Envoy version due to the strict compatibility requirements.
-envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "80c1ac2143a7a73932c9dff814d38fd6867fe691" }
+envoy-proxy-dynamic-modules-rust-sdk = { git = "https://github.com/envoyproxy/envoy", rev = "4a113b5118003682833ba612202eb68628861ac6" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.16.0"
 
 [lib]
 name = "rust_module"

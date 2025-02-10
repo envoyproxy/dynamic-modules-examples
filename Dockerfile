@@ -23,6 +23,6 @@ COPY ./rust .
 RUN cargo build
 
 # Finally, copy the built library to the final image.
-FROM envoyproxy/envoy-dev:80c1ac2143a7a73932c9dff814d38fd6867fe691 AS envoy
+FROM envoyproxy/envoy-dev:4a113b5118003682833ba612202eb68628861ac6 AS envoy
 ENV ENVOY_DYNAMIC_MODULES_SEARCH_PATH=/usr/local/lib
 COPY --from=rust_builder /app/target/debug/librust_module.so /usr/local/lib/librust_module.so
