@@ -2,6 +2,7 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 
 mod http_access_logger;
 mod http_passthrough;
+mod http_random_auth;
 
 declare_init_functions!(init, new_http_filter_config_fn);
 
@@ -34,6 +35,7 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
         "passthrough" => Some(Box::new(http_passthrough::FilterConfig::new(filter_config))),
         "access_logger" => http_access_logger::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
+        "random_auth" => Some(Box::new(http_random_auth::FilterConfig::new(filter_config))),
         _ => panic!("Unknown filter name: {}", filter_name),
     }
 }
