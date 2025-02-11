@@ -132,6 +132,43 @@ func TestIntegration(t *testing.T) {
 		}, 30*time.Second, 1*time.Second)
 	})
 
+	t.Run("http_header_mutation", func(t *testing.T) {
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1062/headers", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+
+			t.Logf("response: headers=%v, body=%s", resp.Header, string(body))
+			require.Equal(t, 200, resp.StatusCode)
+
+			// HttpBin returns a JSON object containing the request headers.
+			type httpBinHeadersBody struct {
+				Headers map[string]string `json:"headers"`
+			}
+			var headersBody httpBinHeadersBody
+			require.NoError(t, json.Unmarshal(body, &headersBody))
+
+			require.Equal(t, "envoy-header", headersBody.Headers["X-Envoy-Header"])
+			require.Equal(t, "envoy-header2", headersBody.Headers["X-Envoy-Header2"])
+
+			// We also need to check that the response headers were mutated.
+			require.Equal(t, "bar", resp.Header.Get("Foo"))
+			require.Equal(t, "bar2", resp.Header.Get("Foo2"))
+			return true
+		}, 30*time.Second, 200*time.Millisecond)
+	})
+
 	t.Run("http_random_auth", func(t *testing.T) {
 		got200 := false
 		got403 := false
