@@ -158,7 +158,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_access_logger_config() {
+    fn test_filter_config() {
         let tmpdir = tempfile::tempdir().unwrap();
         let filter_config = format!(
             r#"{{"dirname": "{}", "num_workers": 1}}"#,
@@ -176,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn test_access_logger_http_filter() {
+    fn test_filter() {
         let (tx, rx) = mpsc::channel::<String>();
         let mut access_logger_filter = Filter {
             tx,

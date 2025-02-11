@@ -58,7 +58,7 @@ func TestIntegration(t *testing.T) {
 	cmd.Env = append(os.Environ(), "ENVOY_UID=0")
 	require.NoError(t, cmd.Start())
 	t.Cleanup(func() {
-		require.NoError(t, cmd.Process.Kill())
+		require.NoError(t, cmd.Process.Signal(os.Interrupt))
 	})
 
 	// Let's wait at least 5 seconds for Envoy to start since it might take a while
@@ -159,5 +159,52 @@ func TestIntegration(t *testing.T) {
 			}
 			return got200 && got403
 		}, 30*time.Second, 200*time.Millisecond)
+	})
+
+	t.Run("http_zero_copy_regex_waf", func(t *testing.T) {
+		t.Run("ok", func(t *testing.T) {
+			require.Eventually(t, func() bool {
+				data := strings.Repeat("a", 1000)
+				req, err := http.NewRequest("GET", "http://localhost:1064/status/200", strings.NewReader(data))
+				require.NoError(t, err)
+
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					t.Logf("Envoy not ready yet: %v", err)
+					return false
+				}
+				defer resp.Body.Close()
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Logf("Envoy not ready yet: %v", err)
+					return false
+				}
+				t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+				return resp.StatusCode == 200
+			}, 30*time.Second, 200*time.Millisecond)
+		})
+
+		for _, body := range []string{"bash -c 'curl https://some-url.com'", "bash -c 'wget https://some-url.com'"} {
+			t.Run("bad "+body, func(t *testing.T) {
+				require.Eventually(t, func() bool {
+					req, err := http.NewRequest("GET", "http://localhost:1064/status/200", strings.NewReader(body))
+					require.NoError(t, err)
+
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						t.Logf("Envoy not ready yet: %v", err)
+						return false
+					}
+					defer resp.Body.Close()
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						t.Logf("Envoy not ready yet: %v", err)
+						return false
+					}
+					t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+					return resp.StatusCode == 403
+				}, 30*time.Second, 200*time.Millisecond)
+			})
+		}
 	})
 }

@@ -25,12 +25,10 @@ impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF> 
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::HttpFilter`] trait.
 ///
-/// This is a passthrough filter that does nothing.
+/// This is a passthrough filter that randomly rejects requests.
 pub struct Filter {}
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::HttpFilter`] trait.
-///
-/// Default implementation of all methods is to return `Continue`.
 impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
     fn on_request_headers(
         &mut self,
