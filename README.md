@@ -31,7 +31,7 @@ cargo clippy -- -D warnings
 cargo fmt --all -- --check
 ```
 
-### Build Envoy + Rust Dynamic Module Docker Image
+### Build Envoy + Example Rust Dynamic Module Docker Image
 
 To build the example modules and bundle them with Envoy, simply run
 
@@ -41,7 +41,7 @@ docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd
 
 where `--platform` is optional and can be used to build for multiple platforms.
 
-### Run Envoy + Rust Dynamic Module Docker Image
+### Run Envoy + Example Rust Dynamic Module Docker Image
 
 The example Envoy configuration yaml is in [`integration/envoy.yaml`](integration/envoy.yaml) which is also used
 to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
