@@ -101,6 +101,7 @@ name = "envoy-proxy-dynamic-modules-rust-sdk-examples"
 version = "0.1.0"
 dependencies = [
  "envoy-proxy-dynamic-modules-rust-sdk",
+ "matchers",
  "rand",
  "serde",
  "serde_json",
@@ -189,6 +190,15 @@ name = "log"
 version = "0.4.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
+
+[[package]]
+name = "matchers"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
+dependencies = [
+ "regex-automata",
+]
 
 [[package]]
 name = "memchr"

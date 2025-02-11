@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     /// This demonstrates how to write a test without Envoy using a mock provided by the SDK.
-    fn test_passthrough_http_filter() {
+    fn test_filter() {
         let mut envoy_filter = envoy_proxy_dynamic_modules_rust_sdk::MockEnvoyHttpFilter::new();
         let mut passthrough_filter = Filter {};
         assert_eq!(

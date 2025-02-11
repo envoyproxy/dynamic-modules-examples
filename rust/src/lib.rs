@@ -3,6 +3,7 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 mod http_access_logger;
 mod http_passthrough;
 mod http_random_auth;
+mod http_zero_copy_regex_waf;
 
 declare_init_functions!(init, new_http_filter_config_fn);
 
@@ -36,6 +37,8 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
         "access_logger" => http_access_logger::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
         "random_auth" => Some(Box::new(http_random_auth::FilterConfig::new(filter_config))),
+        "zero_copy_regex_waf" => http_zero_copy_regex_waf::FilterConfig::new(filter_config)
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
         _ => panic!("Unknown filter name: {}", filter_name),
     }
 }
