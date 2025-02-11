@@ -40,6 +40,18 @@ static_resources:
                           "num_workers": 2,
                           "dirname": "/tmp/"
                         }
+                  - name: dynamic_modules/header_mutation
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: rust_module
+                      filter_name: header_mutation
+                      filter_config: |
+                        {
+                          "request_headers": [["X-Envoy-Header", "envoy-header"], ["X-Envoy-Header2", "envoy-header2"]],
+                          "response_headers": [["Foo", "bar"], ["Foo2", "bar2"]]
+                        }
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
