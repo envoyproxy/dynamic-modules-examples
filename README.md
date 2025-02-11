@@ -15,6 +15,8 @@ Future examples will be added in other languages once the support is available.
 This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
 how to setup the project, how to build it, and how to test it, etc.
 
+The tracking issue for dynamic modules in general is [here](https://github.com/envoyproxy/envoy/issues/38392) where you can find more information about the current status and future plans as well as feature requests.
+
 ## Development
 
 ### Rust Dynamic Module
