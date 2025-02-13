@@ -61,12 +61,12 @@ curl localhost:1062/uuid
 The integration tests are in the `integration` directory. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run the integration tests with the following command:
 ```
 cd integration
-go test .
+go test . -v -count=1
 ```
 
 If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environment variable:
 ```
-ENVOY_IMAGE=foo-bar-image:latest go test .
+ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
 ```
 
 ## Update Envoy Version
