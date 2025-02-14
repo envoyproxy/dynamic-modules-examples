@@ -24,7 +24,8 @@ func TestIntegration(t *testing.T) {
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
 	require.NoError(t, os.RemoveAll(accessLogsDir))
-	require.NoError(t, os.Mkdir(accessLogsDir, 0777))
+	require.NoError(t, os.Mkdir(accessLogsDir, 0700))
+	require.NoError(t, os.Chmod(accessLogsDir, 0777))
 
 	cmd := exec.Command(
 		"docker",
@@ -39,7 +40,6 @@ func TestIntegration(t *testing.T) {
 	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-	cmd.Env = append(os.Environ(), "ENVOY_UID=0")
 	require.NoError(t, cmd.Start())
 	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
 
