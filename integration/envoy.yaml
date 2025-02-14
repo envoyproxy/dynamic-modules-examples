@@ -38,7 +38,7 @@ static_resources:
                       filter_config: |
                         {
                           "num_workers": 2,
-                          "dirname": "/tmp/"
+                          "dirname": "./access_logs"
                         }
                   - name: dynamic_modules/header_mutation
                     typed_config:

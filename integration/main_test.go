@@ -1,9 +1,8 @@
 package main
 
 import (
-	_ "embed"
+	"cmp"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -16,50 +15,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed envoy.yaml
-var originalEnvoyYaml string
-
-func requireEnvoyYaml(t *testing.T, tmpdir string) (yamlPath string) {
-	yamlPath = tmpdir + "/envoy.yaml"
-	replacedYaml := strings.ReplaceAll(originalEnvoyYaml, "/tmp/", tmpdir)
-	require.NoError(t, os.WriteFile(yamlPath, []byte(replacedYaml), 0644))
-	fmt.Println("Envoy config:", replacedYaml)
-	return
-}
-
 func TestIntegration(t *testing.T) {
-	envoyImage := "envoy-with-dynamic-modules:latest"
-	if os.Getenv("ENVOY_IMAGE") != "" {
-		envoyImage = os.Getenv("ENVOY_IMAGE")
-	}
+	envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE"), "envoy-with-dynamic-modules:latest")
 
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
-	tmpdir := t.TempDir()
-	// Grant write permission to the tmpdir for the envoy process.
-	require.NoError(t, exec.Command("chmod", "777", tmpdir).Run())
-	yamlPath := requireEnvoyYaml(t, tmpdir)
+	// Create a directory for the access logs to be written to.
+	accessLogsDir := cwd + "/access_logs"
+	require.NoError(t, os.RemoveAll(accessLogsDir))
+	require.NoError(t, os.Mkdir(accessLogsDir, 0700))
+	require.NoError(t, os.Chmod(accessLogsDir, 0777))
 
 	cmd := exec.Command(
 		"docker",
 		"run",
 		"--network", "host",
 		"-v", cwd+":/integration",
-		"-v", tmpdir+":"+tmpdir,
-		"-w", tmpdir,
+		"-w", "/integration",
 		envoyImage,
 		"--concurrency", "1",
-		"--config-path", yamlPath,
+		"--config-path", "/integration/envoy.yaml",
 		"--base-id", strconv.Itoa(time.Now().Nanosecond()),
 	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
-	cmd.Env = append(os.Environ(), "ENVOY_UID=0")
 	require.NoError(t, cmd.Start())
-	t.Cleanup(func() {
-		require.NoError(t, cmd.Process.Signal(os.Interrupt))
-	})
+	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
 
 	// Let's wait at least 5 seconds for Envoy to start since it might take a while
 	// to pull the image.
@@ -76,7 +58,9 @@ func TestIntegration(t *testing.T) {
 					t.Logf("Envoy not ready yet: %v", err)
 					return false
 				}
-				defer resp.Body.Close()
+				defer func() {
+					require.NoError(t, resp.Body.Close())
+				}()
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					t.Logf("Envoy not ready yet: %v", err)
@@ -89,7 +73,7 @@ func TestIntegration(t *testing.T) {
 
 		require.Eventually(t, func() bool {
 			// List files in the access log directory
-			files, err := os.ReadDir(tmpdir)
+			files, err := os.ReadDir(accessLogsDir)
 			require.NoError(t, err)
 
 			var accessLogFiles []string
@@ -104,10 +88,12 @@ func TestIntegration(t *testing.T) {
 				return false
 			}
 
-			// Read the first access log file
-			file, err := os.Open(tmpdir + "/" + accessLogFiles[0])
+			// Read the first access log file.
+			file, err := os.Open(accessLogsDir + "/" + accessLogFiles[0])
 			require.NoError(t, err)
-			defer file.Close()
+			defer func() {
+				require.NoError(t, file.Close())
+			}()
 			content, err := io.ReadAll(file)
 			require.NoError(t, err)
 
@@ -142,7 +128,9 @@ func TestIntegration(t *testing.T) {
 				t.Logf("Envoy not ready yet: %v", err)
 				return false
 			}
-			defer resp.Body.Close()
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Logf("Envoy not ready yet: %v", err)
@@ -181,7 +169,9 @@ func TestIntegration(t *testing.T) {
 				t.Logf("Envoy not ready yet: %v", err)
 				return false
 			}
-			defer resp.Body.Close()
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Logf("Envoy not ready yet: %v", err)
@@ -210,7 +200,9 @@ func TestIntegration(t *testing.T) {
 					t.Logf("Envoy not ready yet: %v", err)
 					return false
 				}
-				defer resp.Body.Close()
+				defer func() {
+					require.NoError(t, resp.Body.Close())
+				}()
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
 					t.Logf("Envoy not ready yet: %v", err)
@@ -232,7 +224,9 @@ func TestIntegration(t *testing.T) {
 						t.Logf("Envoy not ready yet: %v", err)
 						return false
 					}
-					defer resp.Body.Close()
+					defer func() {
+						require.NoError(t, resp.Body.Close())
+					}()
 					body, err := io.ReadAll(resp.Body)
 					if err != nil {
 						t.Logf("Envoy not ready yet: %v", err)
