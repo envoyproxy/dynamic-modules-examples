@@ -21,12 +21,18 @@ func TestIntegration(t *testing.T) {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
+	// Pull the Envoy image.
+	cmd := exec.Command("docker", "pull", envoyImage)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	require.NoError(t, cmd.Run())
+
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
 	require.NoError(t, os.RemoveAll(accessLogsDir))
-	require.NoError(t, os.Mkdir(accessLogsDir, 0755))
+	require.NoError(t, os.Mkdir(accessLogsDir, 0777))
 
-	cmd := exec.Command(
+	cmd = exec.Command(
 		"docker",
 		"run",
 		"--network", "host",
@@ -41,13 +47,7 @@ func TestIntegration(t *testing.T) {
 	cmd.Stdout = os.Stdout
 	cmd.Env = append(os.Environ(), "ENVOY_UID=0")
 	require.NoError(t, cmd.Start())
-	t.Cleanup(func() {
-		require.NoError(t, cmd.Process.Signal(os.Interrupt))
-	})
-
-	// Let's wait at least 5 seconds for Envoy to start since it might take a while
-	// to pull the image.
-	time.Sleep(5 * time.Second)
+	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
 
 	t.Run("http_access_logger", func(t *testing.T) {
 		t.Run("health checking", func(t *testing.T) {
