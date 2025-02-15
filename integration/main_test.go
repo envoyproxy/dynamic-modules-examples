@@ -149,10 +149,12 @@ func TestIntegration(t *testing.T) {
 
 			require.Equal(t, "envoy-header", headersBody.Headers["X-Envoy-Header"])
 			require.Equal(t, "envoy-header2", headersBody.Headers["X-Envoy-Header2"])
+			require.NotContains(t, headersBody.Headers, "apple")
 
 			// We also need to check that the response headers were mutated.
 			require.Equal(t, "bar", resp.Header.Get("Foo"))
 			require.Equal(t, "bar2", resp.Header.Get("Foo2"))
+			require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Credentials"))
 			return true
 		}, 30*time.Second, 200*time.Millisecond)
 	})
