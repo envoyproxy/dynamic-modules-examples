@@ -50,7 +50,9 @@ static_resources:
                       filter_config: |
                         {
                           "request_headers": [["X-Envoy-Header", "envoy-header"], ["X-Envoy-Header2", "envoy-header2"]],
-                          "response_headers": [["Foo", "bar"], ["Foo2", "bar2"]]
+                          "remove_request_headers": ["apple"],
+                          "response_headers": [["Foo", "bar"], ["Foo2", "bar2"]],
+                          "remove_response_headers": ["Access-Control-Allow-Credentials"]
                         }
                   - name: envoy.filters.http.router
                     typed_config:

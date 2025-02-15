@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FilterConfig {
     request_headers: Vec<(String, String)>,
+    remove_request_headers: Vec<String>,
     response_headers: Vec<(String, String)>,
+    remove_response_headers: Vec<String>,
 }
 
 impl FilterConfig {
@@ -32,7 +34,9 @@ impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF> 
     fn new_http_filter(&mut self, _envoy: &mut EC) -> Box<dyn HttpFilter<EHF>> {
         Box::new(Filter {
             request_headers: self.request_headers.clone(),
+            remove_request_headers: self.remove_request_headers.clone(),
             response_headers: self.response_headers.clone(),
+            remove_response_headers: self.remove_response_headers.clone(),
         })
     }
 }
@@ -42,7 +46,9 @@ impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF> 
 /// This sets the request and response headers to the values specified in the filter config.
 pub struct Filter {
     request_headers: Vec<(String, String)>,
+    remove_request_headers: Vec<String>,
     response_headers: Vec<(String, String)>,
+    remove_response_headers: Vec<String>,
 }
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::HttpFilter`] trait.
@@ -55,6 +61,9 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
         for (key, value) in &self.request_headers {
             envoy_filter.set_request_header(key, value.as_bytes());
         }
+        for key in &self.remove_request_headers {
+            envoy_filter.remove_request_header(key);
+        }
         abi::envoy_dynamic_module_type_on_http_filter_request_headers_status::Continue
     }
 
@@ -65,6 +74,9 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
     ) -> abi::envoy_dynamic_module_type_on_http_filter_response_headers_status {
         for (key, value) in &self.response_headers {
             envoy_filter.set_response_header(key, value.as_bytes());
+        }
+        for key in &self.remove_response_headers {
+            envoy_filter.remove_response_header(key);
         }
         abi::envoy_dynamic_module_type_on_http_filter_response_headers_status::Continue
     }
@@ -80,7 +92,9 @@ mod tests {
         let mut envoy_filter = envoy_proxy_dynamic_modules_rust_sdk::MockEnvoyHttpFilter::new();
         let mut filter = Filter {
             request_headers: vec![("X-Foo".to_string(), "bar".to_string())],
+            remove_request_headers: vec!["To-Remove".to_string()],
             response_headers: vec![("X-Bar".to_string(), "foo".to_string())],
+            remove_response_headers: vec!["To-Remove".to_string()],
         };
 
         envoy_filter
@@ -91,10 +105,22 @@ mod tests {
                 return true;
             });
         envoy_filter
+            .expect_remove_request_header()
+            .returning(|key| {
+                assert_eq!(key, "To-Remove");
+                return true;
+            });
+        envoy_filter
             .expect_set_response_header()
             .returning(|key, value| {
                 assert_eq!(key, "X-Bar");
                 assert_eq!(value, b"foo");
+                return true;
+            });
+        envoy_filter
+            .expect_remove_response_header()
+            .returning(|key| {
+                assert_eq!(key, "To-Remove");
                 return true;
             });
         assert_eq!(
