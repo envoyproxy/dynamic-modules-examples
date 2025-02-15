@@ -103,7 +103,7 @@ func TestIntegration(t *testing.T) {
 			}
 
 			var found bool
-			for _, line := range strings.Split(string(content), "\n") {
+			for line := range strings.Lines(string(content)) {
 				t.Log(line)
 				if line == "" {
 					continue
