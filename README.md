@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: [726958228dc292f65b5acde26162a3645a99b067]
+> Envoy Version: [9e1c1fc7e824ebf7ca8aef77377b1f9de854b2b2]
 
 This repository hosts examples of dynamic modules for [Envoy] to extend its functionality.
 The high level documentation is available [here][High Level Doc]. In short, a dynamic module is a shared library
@@ -79,6 +79,6 @@ NEW_VERSION=4a113b5118003682833ba612202eb68628861ac6 # Whatever the commit in en
 grep -rlF "${CURRENT_VERSION}" . | xargs sed -i "s/${CURRENT_VERSION}/${NEW_VERSION}/g"
 ```
 
-[726958228dc292f65b5acde26162a3645a99b067]: https://github.com/envoyproxy/envoy/tree/726958228dc292f65b5acde26162a3645a99b067
+[9e1c1fc7e824ebf7ca8aef77377b1f9de854b2b2]: https://github.com/envoyproxy/envoy/tree/9e1c1fc7e824ebf7ca8aef77377b1f9de854b2b2
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules

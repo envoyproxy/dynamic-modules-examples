@@ -35,11 +35,13 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: access_logger
-                      filter_config: |
-                        {
-                          "num_workers": 2,
-                          "dirname": "./access_logs"
-                        }
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          {
+                            "num_workers": 2,
+                            "dirname": "./access_logs"
+                          }
                   - name: dynamic_modules/header_mutation
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
@@ -47,13 +49,15 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: header_mutation
-                      filter_config: |
-                        {
-                          "request_headers": [["X-Envoy-Header", "envoy-header"], ["X-Envoy-Header2", "envoy-header2"]],
-                          "remove_request_headers": ["apple"],
-                          "response_headers": [["Foo", "bar"], ["Foo2", "bar2"]],
-                          "remove_response_headers": ["Access-Control-Allow-Credentials"]
-                        }
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          {
+                            "request_headers": [["X-Envoy-Header", "envoy-header"], ["X-Envoy-Header2", "envoy-header2"]],
+                            "remove_request_headers": ["apple"],
+                            "response_headers": [["Foo", "bar"], ["Foo2", "bar2"]],
+                            "remove_response_headers": ["Access-Control-Allow-Credentials"]
+                          }
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -117,8 +121,10 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: zero_copy_regex_waf
-                      # Reject requests with curl or wget in the body.
-                      filter_config: "^.*(curl|wget).*"
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        # Reject requests with curl or wget in the body.
+                        value: "^.*(curl|wget).*"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
