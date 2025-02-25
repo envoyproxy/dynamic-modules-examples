@@ -33,8 +33,8 @@ impl FilterConfig {
     ///
     /// filter_config is the filter config from the Envoy config here:
     /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
-    pub fn new(filter_config: &str) -> Option<Self> {
-        let filter_config: FilterConfigData = match serde_json::from_str(filter_config) {
+    pub fn new(filter_config: &[u8]) -> Option<Self> {
+        let filter_config: FilterConfigData = match serde_json::from_slice(filter_config) {
             Ok(cfg) => cfg,
             Err(err) => {
                 eprintln!("Error parsing filter config: {}", err);
@@ -163,7 +163,8 @@ mod tests {
         let filter_config = format!(
             r#"{{"dirname": "{}", "num_workers": 1}}"#,
             tmpdir.path().display()
-        );
+        )
+        .into_bytes();
         let config = FilterConfig::new(&filter_config).unwrap();
         config.tx.clone().send("foo".to_string()).unwrap();
 

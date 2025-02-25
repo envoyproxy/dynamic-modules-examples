@@ -11,7 +11,7 @@ impl FilterConfig {
     ///
     /// filter_config is the filter config from the Envoy config here:
     /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
-    pub fn new(_filter_config: &str) -> Self {
+    pub fn new(_filter_config: &[u8]) -> Self {
         Self {}
     }
 }

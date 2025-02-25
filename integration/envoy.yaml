@@ -118,7 +118,9 @@ static_resources:
                         name: rust_module
                       filter_name: zero_copy_regex_waf
                       # Reject requests with curl or wget in the body.
-                      filter_config: "^.*(curl|wget).*"
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: "^.*(curl|wget).*"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

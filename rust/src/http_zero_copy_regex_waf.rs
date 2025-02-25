@@ -16,14 +16,13 @@ impl FilterConfig {
     ///
     /// filter_config is the filter config from the Envoy config here:
     /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
-    pub fn new(filter_config: &str) -> Option<Self> {
-        let re = match Pattern::new(filter_config) {
-            Ok(cfg) => cfg,
-            Err(err) => {
-                eprintln!("Error parsing filter config: {}", err);
-                return None;
-            }
-        };
+    pub fn new(filter_config: &[u8]) -> Option<Self> {
+        let cfg = std::str::from_utf8(filter_config)
+            .inspect_err(|err| eprintln!("Error parsing filter config: {}", err))
+            .ok()?;
+        let re = Pattern::new(cfg)
+            .inspect_err(|err| eprintln!("Error parsing filter config: {}", err))
+            .ok()?;
         Some(Self { re })
     }
 }
@@ -129,7 +128,7 @@ mod tests {
         struct EnvoyConfig {}
         impl EnvoyHttpFilterConfig for EnvoyConfig {}
         let mut envoy_config = EnvoyConfig {};
-        let mut filter_config = FilterConfig::new("Hello [Ww].+").unwrap();
+        let mut filter_config = FilterConfig::new(b"Hello [Ww].+").unwrap();
         let mut filter: Box<dyn HttpFilter<MockEnvoyHttpFilter>> =
             filter_config.new_http_filter(&mut envoy_config);
 

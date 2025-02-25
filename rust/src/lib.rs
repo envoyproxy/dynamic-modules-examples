@@ -31,7 +31,7 @@ fn init() -> bool {
 fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     _envoy_filter_config: &mut EC,
     filter_name: &str,
-    filter_config: &str,
+    filter_config: &[u8],
 ) -> Option<Box<dyn HttpFilterConfig<EC, EHF>>> {
     match filter_name {
         "passthrough" => Some(Box::new(http_passthrough::FilterConfig::new(filter_config))),

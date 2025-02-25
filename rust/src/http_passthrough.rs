@@ -4,7 +4,7 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 ///
 /// The trait corresponds to a Envoy filter chain configuration.
 pub struct FilterConfig {
-    _filter_config: String,
+    _filter_config: Vec<u8>,
 }
 
 impl FilterConfig {
@@ -12,9 +12,9 @@ impl FilterConfig {
     ///
     /// filter_config is the filter config from the Envoy config here:
     /// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
-    pub fn new(filter_config: &str) -> Self {
+    pub fn new(filter_config: &[u8]) -> Self {
         Self {
-            _filter_config: filter_config.to_string(),
+            _filter_config: filter_config.to_owned(),
         }
     }
 }
