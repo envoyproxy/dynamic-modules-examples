@@ -30,17 +30,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: -${{ matrix.platform.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ matrix.platform.os }}-cargo-registry-
 
       - name: Cache Cargo git index
         uses: actions/cache@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.platform.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-git-
+            ${{ matrix.platform.os }}-cargo-git-
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -128,7 +128,7 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
             ~/go/bin
-          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ runner.os }}
+          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
       - name: Run integration tests
         env:
           ENVOY_IMAGE: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
