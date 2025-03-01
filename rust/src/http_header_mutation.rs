@@ -72,6 +72,24 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
         envoy_filter: &mut EHF,
         _end_of_stream: bool,
     ) -> abi::envoy_dynamic_module_type_on_http_filter_response_headers_status {
+        let downstream_addr = envoy_filter
+            .get_attribute_string(abi::envoy_dynamic_module_type_attribute_id::SourceAddress)
+            .expect("Failed to get source address");
+        let downstream_addr = Vec::from(downstream_addr.as_slice());
+        envoy_filter.set_response_header("X-Downstream-Address", downstream_addr.as_slice());
+
+        let upstream_addr = envoy_filter
+            .get_attribute_string(abi::envoy_dynamic_module_type_attribute_id::UpstreamAddress)
+            .expect("Failed to get upstream address");
+        let upstream_addr = Vec::from(upstream_addr.as_slice());
+        envoy_filter.set_response_header("X-Upstream-Address", upstream_addr.as_slice());
+
+        let response_code = envoy_filter
+            .get_attribute_int(abi::envoy_dynamic_module_type_attribute_id::ResponseCode)
+            .expect("Failed to get response code");
+        let response_code = response_code.to_string();
+        envoy_filter.set_response_header("X-Response-Code", response_code.as_bytes());
+
         for (key, value) in &self.response_headers {
             envoy_filter.set_response_header(key, value.as_bytes());
         }

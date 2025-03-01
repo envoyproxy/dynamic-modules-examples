@@ -154,6 +154,8 @@ func TestIntegration(t *testing.T) {
 			// We also need to check that the response headers were mutated.
 			require.Equal(t, "bar", resp.Header.Get("Foo"))
 			require.Equal(t, "bar2", resp.Header.Get("Foo2"))
+			require.NotEmpty(t, resp.Header.Get("X-Upstream-Address"), resp.Header.Get("X-Upstream-Address"))
+			require.Equal(t, "200", resp.Header.Get("X-Response-Code"))
 			require.Equal(t, "", resp.Header.Get("Access-Control-Allow-Credentials"))
 			return true
 		}, 30*time.Second, 200*time.Millisecond)
