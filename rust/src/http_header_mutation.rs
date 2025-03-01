@@ -72,6 +72,24 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
         envoy_filter: &mut EHF,
         _end_of_stream: bool,
     ) -> abi::envoy_dynamic_module_type_on_http_filter_response_headers_status {
+        let downstream_addr = envoy_filter
+            .get_attribute_string(abi::envoy_dynamic_module_type_attribute_id::SourceAddress)
+            .expect("Failed to get source address");
+        let downstream_addr = Vec::from(downstream_addr.as_slice());
+        envoy_filter.set_response_header("X-Downstream-Address", downstream_addr.as_slice());
+
+        let upstream_addr = envoy_filter
+            .get_attribute_string(abi::envoy_dynamic_module_type_attribute_id::UpstreamAddress)
+            .expect("Failed to get upstream address");
+        let upstream_addr = Vec::from(upstream_addr.as_slice());
+        envoy_filter.set_response_header("X-Upstream-Address", upstream_addr.as_slice());
+
+        let response_code = envoy_filter
+            .get_attribute_int(abi::envoy_dynamic_module_type_attribute_id::ResponseCode)
+            .expect("Failed to get response code");
+        let response_code = response_code.to_string();
+        envoy_filter.set_response_header("X-Response-Code", response_code.as_bytes());
+
         for (key, value) in &self.response_headers {
             envoy_filter.set_response_header(key, value.as_bytes());
         }
@@ -96,7 +114,49 @@ mod tests {
             response_headers: vec![("X-Bar".to_string(), "foo".to_string())],
             remove_response_headers: vec!["To-Remove".to_string()],
         };
-
+        envoy_filter
+            .expect_get_attribute_string()
+            .returning(|id| match id {
+                abi::envoy_dynamic_module_type_attribute_id::SourceAddress => {
+                    return Some(EnvoyBuffer::new("1.1.1.1:12345"));
+                }
+                abi::envoy_dynamic_module_type_attribute_id::UpstreamAddress => {
+                    return Some(EnvoyBuffer::new("2.2.2.2:12345"));
+                }
+                _ => panic!("Unexpected attribute id"),
+            });
+        envoy_filter
+            .expect_get_attribute_int()
+            .returning(|id| match id {
+                abi::envoy_dynamic_module_type_attribute_id::ResponseCode => {
+                    return Some(200);
+                }
+                _ => panic!("Unexpected attribute id"),
+            });
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Downstream-Address");
+                assert_eq!(value, b"1.1.1.1:12345");
+                return true;
+            })
+            .once();
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Upstream-Address");
+                assert_eq!(value, b"2.2.2.2:12345");
+                return true;
+            })
+            .once();
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Response-Code");
+                assert_eq!(value, b"200");
+                return true;
+            })
+            .once();
         envoy_filter
             .expect_set_request_header()
             .returning(|key, value| {
