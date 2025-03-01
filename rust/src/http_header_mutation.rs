@@ -114,7 +114,49 @@ mod tests {
             response_headers: vec![("X-Bar".to_string(), "foo".to_string())],
             remove_response_headers: vec!["To-Remove".to_string()],
         };
-
+        envoy_filter
+            .expect_get_attribute_string()
+            .returning(|id| match id {
+                abi::envoy_dynamic_module_type_attribute_id::SourceAddress => {
+                    return Some(EnvoyBuffer::new("1.1.1.1:12345"));
+                }
+                abi::envoy_dynamic_module_type_attribute_id::UpstreamAddress => {
+                    return Some(EnvoyBuffer::new("2.2.2.2:12345"));
+                }
+                _ => panic!("Unexpected attribute id"),
+            });
+        envoy_filter
+            .expect_get_attribute_int()
+            .returning(|id| match id {
+                abi::envoy_dynamic_module_type_attribute_id::ResponseCode => {
+                    return Some(200);
+                }
+                _ => panic!("Unexpected attribute id"),
+            });
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Downstream-Address");
+                assert_eq!(value, b"1.1.1.1:12345");
+                return true;
+            })
+            .once();
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Upstream-Address");
+                assert_eq!(value, b"2.2.2.2:12345");
+                return true;
+            })
+            .once();
+        envoy_filter
+            .expect_set_response_header()
+            .returning(|key, value| {
+                assert_eq!(key, "X-Response-Code");
+                assert_eq!(value, b"200");
+                return true;
+            })
+            .once();
         envoy_filter
             .expect_set_request_header()
             .returning(|key, value| {
