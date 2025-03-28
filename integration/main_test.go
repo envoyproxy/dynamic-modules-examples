@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mccutchen/go-httpbin/v2/httpbin"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,6 +21,16 @@ func TestIntegration(t *testing.T) {
 
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
+
+	// Setup the httpbin upstream local server.
+	httpbinHandler := httpbin.New()
+	server := &http.Server{Addr: ":1234", Handler: httpbinHandler}
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			t.Logf("HTTP server error: %v", err)
+		}
+	}()
+	t.Cleanup(func() { _ = server.Close() })
 
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
@@ -140,15 +151,15 @@ func TestIntegration(t *testing.T) {
 			t.Logf("response: headers=%v, body=%s", resp.Header, string(body))
 			require.Equal(t, 200, resp.StatusCode)
 
-			// HttpBin returns a JSON object containing the request headers.
+			// HttpBin returns a JSON object containing the request headers in this format.
 			type httpBinHeadersBody struct {
-				Headers map[string]string `json:"headers"`
+				Headers map[string][]string `json:"headers"`
 			}
 			var headersBody httpBinHeadersBody
 			require.NoError(t, json.Unmarshal(body, &headersBody))
 
-			require.Equal(t, "envoy-header", headersBody.Headers["X-Envoy-Header"])
-			require.Equal(t, "envoy-header2", headersBody.Headers["X-Envoy-Header2"])
+			require.Contains(t, headersBody.Headers["X-Envoy-Header"], "envoy-header")
+			require.Contains(t, headersBody.Headers["X-Envoy-Header2"], "envoy-header2")
 			require.NotContains(t, headersBody.Headers, "apple")
 
 			// We also need to check that the response headers were mutated.

@@ -158,5 +158,5 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: httpbin.org
-                      port_value: 80
+                      address: 127.0.0.1
+                      port_value: 1234
