@@ -28,7 +28,7 @@ RUN cp /build/target/aarch64-unknown-linux-gnu/debug/librust_module.so /build/ar
 RUN cp /build/target/x86_64-unknown-linux-gnu/debug/librust_module.so /build/amd64_librust_module.so
 
 # Finally, copy the built library to the final image.
-FROM envoyproxy/envoy-dev:59a14b1dcb532b23a5566173009e06d02892c1a9 AS envoy
+FROM envoyproxy/envoy-dev:a27d2c31627e59f096f7c8cdc84488649158b000 AS envoy
 ARG TARGETARCH
 ENV ENVOY_DYNAMIC_MODULES_SEARCH_PATH=/usr/local/lib
 COPY --from=rust_builder /build/${TARGETARCH}_librust_module.so /usr/local/lib/librust_module.so
