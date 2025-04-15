@@ -90,6 +90,13 @@ bool envoy_dynamic_module_callback_http_get_response_body_vector(
 #cgo nocallback envoy_dynamic_module_callback_http_get_response_body_vector_size
 bool envoy_dynamic_module_callback_http_get_response_body_vector_size(
     uintptr_t filter_envoy_ptr, size_t* size);
+
+#cgo noescape envoy_dynamic_module_callback_http_send_response
+#cgo nocallback envoy_dynamic_module_callback_http_send_response
+void envoy_dynamic_module_callback_http_send_response(
+    uintptr_t filter_envoy_ptr, uint32_t status_code,
+    uintptr_t headers_vector, size_t headers_vector_size,
+    uintptr_t body, size_t body_length);
 */
 import "C"
 
@@ -345,6 +352,24 @@ type bodyChunk struct {
 
 // envoyFilter implements [EnvoyHttpFilter].
 type envoyFilter struct{ raw uintptr }
+
+// SendLocalReply implements EnvoyHttpFilter.
+func (e envoyFilter) SendLocalReply(statusCode uint32, headers [][2]string, body []byte) {
+	headersVecPtr := uintptr(unsafe.Pointer(unsafe.SliceData(headers)))
+	headersVecSize := len(headers)
+	bodyPtr := uintptr(unsafe.Pointer(unsafe.SliceData(body)))
+	bodySize := len(body)
+	C.envoy_dynamic_module_callback_http_send_response(
+		C.uintptr_t(e.raw),
+		C.uint32_t(statusCode),
+		C.uintptr_t(headersVecPtr),
+		C.size_t(headersVecSize),
+		C.uintptr_t(bodyPtr),
+		C.size_t(bodySize),
+	)
+	runtime.KeepAlive(headers)
+	runtime.KeepAlive(body)
+}
 
 // AppendRequestBody implements [EnvoyHttpFilter].
 func (e envoyFilter) AppendRequestBody(data []byte) bool {

@@ -90,6 +90,17 @@ static_resources:
                           route:
                             cluster: httpbin
                 http_filters:
+                  - name: dynamic_modules/header_auth
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: go_module
+                        do_not_close: true
+                      filter_name: header_auth
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: go-module-auth-header
                   - name: dynamic_modules/random_auth
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig

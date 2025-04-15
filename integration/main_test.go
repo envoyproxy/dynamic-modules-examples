@@ -174,12 +174,37 @@ func TestIntegration(t *testing.T) {
 	})
 
 	t.Run("http_random_auth", func(t *testing.T) {
+		// Without this, the Go module will reject the request.
+		const gomoduleAuthHeader = "go-module-auth-header"
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1063/uuid", nil)
+			require.NoError(t, err)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+
+			if resp.StatusCode != http.StatusUnauthorized {
+				t.Logf("unexpected status code: %d", resp.StatusCode)
+				return false
+			}
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+			require.Contains(t, string(body), "Unauthorized by Go Module")
+			return true
+		}, 30*time.Second, 200*time.Millisecond)
+
 		got200 := false
 		got403 := false
 		require.Eventually(t, func() bool {
 			req, err := http.NewRequest("GET", "http://localhost:1063/uuid", nil)
 			require.NoError(t, err)
-
+			req.Header.Add(gomoduleAuthHeader, "anything")
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				t.Logf("Envoy not ready yet: %v", err)
