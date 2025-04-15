@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: [a27d2c31627e59f096f7c8cdc84488649158b000]
+> Envoy Version: [5b88f941da971de57f29286103c20770811ec67f] v1.34
 
 This repository hosts examples of dynamic modules for [Envoy] to extend its functionality.
 The high level documentation is available [here][High Level Doc]. In short, a dynamic module is a shared library
@@ -9,8 +9,12 @@ that can be loaded into Envoy at runtime to add custom functionality, for exampl
 It is a new way to extend Envoy without the need to recompile it just like the existing mechanisms
 like Lua filters, Wasm filters, or External Processors.
 
-Currently, the only language supported is Rust, so this repository contains examples of dynamic modules written in Rust.
-Future examples will be added in other languages once the support is available.
+As of writing, the only official language supported by Envoy is Rust. However, the dynamic module's interface is defined in a plain
+C header file, so technically you can implement a dynamic module in any language that can build shared libraries, such as C, C++, Go, Zig, etc.
+Currently, this repository hosts two language implementations of dynamic modules: Rust and C++.
+* [`rust`](rust): using the official Rust dynamic module SDK.
+* [`go`](go): using the experimental Go dynamic module SDK implemented here. WARNING: This is not an official SDK and is not
+  supported by Envoy main respository. See [issue#25](https://github.com/envoyproxy/dynamic-modules-examples/issues/25) for more details.
 
 This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
 how to setup the project, how to build it, and how to test it, etc.
@@ -31,7 +35,18 @@ cargo clippy -- -D warnings
 cargo fmt --all -- --check
 ```
 
-### Build Envoy + Example Rust Dynamic Module Docker Image
+### Go Dynamic Module
+To build and test the modules locally without Envoy, you can use `go` to build them just like any other Go project:
+
+```
+cd go
+go test ./... -v
+go build -buildmode=c-shared -o libgo_module.so .
+go tool golangci-lint run
+find . -type f -name '*.go' | xargs go tool gofumpt -l -w
+```
+
+### Build Envoy + Example Dynamic Module Docker Image
 
 To build the example modules and bundle them with Envoy, simply run
 
@@ -41,7 +56,7 @@ docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd
 
 where `--platform` is optional and can be used to build for multiple platforms.
 
-### Run Envoy + Example Rust Dynamic Module Docker Image
+### Run Envoy + Example Dynamic Module Docker Image
 
 The example Envoy configuration yaml is in [`integration/envoy.yaml`](integration/envoy.yaml) which is also used
 to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
@@ -69,16 +84,6 @@ If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environmen
 ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
 ```
 
-## Update Envoy Version
-
-To update the Envoy version used in this repository, execute the following command:
-
-```
-CURRENT_VERSION="$(cat ENVOY_VERSION)"
-NEW_VERSION=4a113b5118003682833ba612202eb68628861ac6 # Whatever the commit in envoyproxy/envoy repo.
-grep -rlF "${CURRENT_VERSION}" . | xargs sed -i "s/${CURRENT_VERSION}/${NEW_VERSION}/g"
-```
-
-[a27d2c31627e59f096f7c8cdc84488649158b000]: https://github.com/envoyproxy/envoy/tree/a27d2c31627e59f096f7c8cdc84488649158b000
+[5b88f941da971de57f29286103c20770811ec67f]: https://github.com/envoyproxy/envoy/tree/5b88f941da971de57f29286103c20770811ec67f
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules

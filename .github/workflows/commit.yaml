@@ -61,6 +61,42 @@ jobs:
       - name: Run tests
         run: cargo test --verbose
 
+  go:
+    name: Go Build and Test (${{ matrix.platform.arch }})
+    runs-on: ${{ matrix.platform.os }}
+    defaults:
+      run:
+        working-directory: ./go
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: ubuntu-22.04
+            arch: amd64
+          - os: ubuntu-22.04-arm
+            arch: arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version-file: go.mod
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: go-test-${{ hashFiles('**/go.mod', '**/go.sum') }}
+
+      - run: go test ./... -v
+      - run: go build -buildmode=c-shared -o main.so
+      - run: go tool golangci-lint run
+
   docker_build:
     name: Build and Push multi-arch Docker image
     runs-on: ubuntu-latest

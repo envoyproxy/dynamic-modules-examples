@@ -5,3 +5,5 @@ bazel-out/
 bazel-*
 
 access_logs/
+
+*.so

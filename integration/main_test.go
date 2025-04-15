@@ -44,6 +44,7 @@ func TestIntegration(t *testing.T) {
 		"--network", "host",
 		"-v", cwd+":/integration",
 		"-w", "/integration",
+		"--rm",
 		envoyImage,
 		"--concurrency", "1",
 		"--config-path", "/integration/envoy.yaml",
