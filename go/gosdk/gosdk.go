@@ -48,6 +48,8 @@ type EnvoyHttpFilter interface {
 	DrainResponseBody(n int) bool
 	// AppendResponseBody appends the data to the response body. This will invalidate the io.Reader returned by GetResponseBody before this is called.
 	AppendResponseBody(data []byte) bool
+	// SendLocalReply sends a local reply to the client. This must not be used in after returning continue from the response headers phase.
+	SendLocalReply(statusCode uint32, headers [][2]string, body []byte)
 }
 
 // HttpFilter is an interface that represents each Http request.
