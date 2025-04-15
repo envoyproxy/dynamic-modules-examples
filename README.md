@@ -71,7 +71,7 @@ Then execute, for example, the following command to test the passthrough and acc
 curl localhost:1062/uuid
 ```
 
-### Run integration tests with the built example Envoy + Rust Dynamic Module Docker Image.
+### Run integration tests with the built example Envoy + Dynamic Module Docker Image.
 
 The integration tests are in the `integration` directory. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run the integration tests with the following command:
 ```
