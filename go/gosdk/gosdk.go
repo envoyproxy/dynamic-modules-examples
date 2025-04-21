@@ -30,10 +30,14 @@ type HttpFilterConfig interface {
 type EnvoyHttpFilter interface {
 	// GetRequestHeader gets the first value of the request header. Returns the value and true if the header is found.
 	GetRequestHeader(key string) (string, bool)
+	// GetRequestHeaders gets all the request headers.
+	GetRequestHeaders() map[string][]string
 	// SetRequestHeader sets the request header. Returns true if the header is set successfully.
 	SetRequestHeader(key string, value []byte) bool
 	// GetResponseHeader gets the first value of the response header. Returns the value and true if the header is found.
 	GetResponseHeader(key string) (string, bool)
+	// GetResponseHeaders gets all the response headers.
+	GetResponseHeaders() map[string][]string
 	// SetResponseHeader sets the response header. Returns true if the header is set successfully.
 	SetResponseHeader(key string, value []byte) bool
 	// GetRequestBody gets the request body. Returns the io.Reader and true if the body is found.

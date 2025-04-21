@@ -97,6 +97,28 @@ void envoy_dynamic_module_callback_http_send_response(
     uintptr_t filter_envoy_ptr, uint32_t status_code,
     uintptr_t headers_vector, size_t headers_vector_size,
     uintptr_t body, size_t body_length);
+
+#cgo noescape envoy_dynamic_module_callback_http_get_request_headers_count
+#cgo nocallback envoy_dynamic_module_callback_http_get_request_headers_count
+size_t envoy_dynamic_module_callback_http_get_request_headers_count(
+	uintptr_t filter_envoy_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_get_request_headers
+#cgo nocallback envoy_dynamic_module_callback_http_get_request_headers
+bool envoy_dynamic_module_callback_http_get_request_headers(
+    uintptr_t filter_envoy_ptr,
+    uintptr_t* result_headers);
+
+#cgo noescape envoy_dynamic_module_callback_http_get_request_headers_count
+#cgo nocallback envoy_dynamic_module_callback_http_get_request_headers_count
+size_t envoy_dynamic_module_callback_http_get_response_headers_count(
+	uintptr_t filter_envoy_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_get_request_headers
+#cgo nocallback envoy_dynamic_module_callback_http_get_request_headers
+bool envoy_dynamic_module_callback_http_get_response_headers(
+    uintptr_t filter_envoy_ptr,
+    uintptr_t* result_headers);
 */
 import "C"
 
@@ -320,7 +342,7 @@ func (e envoyFilter) SetResponseHeader(key string, value []byte) bool {
 
 // bodyReader implements [io.Reader] for the request or response body.
 type bodyReader struct {
-	chunks        []bodyChunk
+	chunks        []envoySlice
 	index, offset int
 }
 
@@ -345,13 +367,57 @@ func (b *bodyReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-type bodyChunk struct {
+type envoySlice struct {
 	data   uintptr
 	length C.size_t
 }
 
 // envoyFilter implements [EnvoyHttpFilter].
 type envoyFilter struct{ raw uintptr }
+
+// GetRequestHeaders implements EnvoyHttpFilter.
+func (e envoyFilter) GetRequestHeaders() map[string][]string {
+	count := C.envoy_dynamic_module_callback_http_get_request_headers_count(C.uintptr_t(e.raw))
+	raw := make([][2]envoySlice, count)
+	ret := C.envoy_dynamic_module_callback_http_get_request_headers(
+		C.uintptr_t(e.raw),
+		(*C.uintptr_t)(unsafe.Pointer(&raw[0])),
+	)
+	if !ret {
+		return nil
+	}
+	// Copy the headers to a Go slice.
+	headers := make(map[string][]string, count) // The count is the number of (key, value) pairs, so this might be larger than the number of unique names.
+	for i := range count {
+		// Copy the Envoy owner data to a Go string.
+		key := string(unsafe.Slice((*byte)(unsafe.Pointer(raw[i][0].data)), raw[i][0].length))
+		value := string(unsafe.Slice((*byte)(unsafe.Pointer(raw[i][1].data)), raw[i][1].length))
+		headers[key] = append(headers[key], value)
+	}
+	return headers
+}
+
+// GetResponseHeaders implements [EnvoyHttpFilter].
+func (e envoyFilter) GetResponseHeaders() map[string][]string {
+	count := C.envoy_dynamic_module_callback_http_get_response_headers_count(C.uintptr_t(e.raw))
+	raw := make([][2]envoySlice, count)
+	ret := C.envoy_dynamic_module_callback_http_get_response_headers(
+		C.uintptr_t(e.raw),
+		(*C.uintptr_t)(unsafe.Pointer(&raw[0])),
+	)
+	if !ret {
+		return nil
+	}
+	// Copy the headers to a Go slice.
+	headers := make(map[string][]string, count) // The count is the number of (key, value) pairs, so this might be larger than the number of unique names.
+	for i := range count {
+		// Copy the Envoy owner data to a Go string.
+		key := string(unsafe.Slice((*byte)(unsafe.Pointer(raw[i][0].data)), raw[i][0].length))
+		value := string(unsafe.Slice((*byte)(unsafe.Pointer(raw[i][1].data)), raw[i][1].length))
+		headers[key] = append(headers[key], value)
+	}
+	return headers
+}
 
 // SendLocalReply implements EnvoyHttpFilter.
 func (e envoyFilter) SendLocalReply(statusCode uint32, headers [][2]string, body []byte) {
@@ -403,7 +469,7 @@ func (e envoyFilter) GetRequestBody() (io.Reader, bool) {
 		return nil, false
 	}
 
-	chunks := make([]bodyChunk, vectorSize)
+	chunks := make([]envoySlice, vectorSize)
 	ret = C.envoy_dynamic_module_callback_http_get_request_body_vector(
 		C.uintptr_t(e.raw),
 		(*C.uintptr_t)(unsafe.Pointer(&chunks[0])),
@@ -445,7 +511,7 @@ func (e envoyFilter) GetResponseBody() (io.Reader, bool) {
 	if !ret {
 		return nil, false
 	}
-	chunks := make([]bodyChunk, vectorSize)
+	chunks := make([]envoySlice, vectorSize)
 	ret = C.envoy_dynamic_module_callback_http_get_response_body_vector(
 		C.uintptr_t(e.raw),
 		(*C.uintptr_t)(unsafe.Pointer(&chunks[0])),
