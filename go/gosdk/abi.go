@@ -397,21 +397,16 @@ func (e envoyFilter) GetSourceAddress() string {
 func (e envoyFilter) getStringAttribute(id int) string {
 	var resultBufferPtr *byte
 	var resultBufferLengthPtr int
-
 	ret := C.envoy_dynamic_module_callback_http_filter_get_attribute_string(
 		C.uintptr_t(e.raw),
 		C.size_t(id),
 		(*C.uintptr_t)(unsafe.Pointer(&resultBufferPtr)),
 		(*C.size_t)(unsafe.Pointer(&resultBufferLengthPtr)),
 	)
-
 	if !ret {
 		return ""
 	}
-
-	result := unsafe.Slice(resultBufferPtr, resultBufferLengthPtr)
-	runtime.KeepAlive(result)
-	return string(result)
+	return string(unsafe.Slice(resultBufferPtr, resultBufferLengthPtr)) // Copy the result to a Go string.
 }
 
 // GetRequestHeaders implements EnvoyHttpFilter.
