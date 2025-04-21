@@ -119,6 +119,13 @@ size_t envoy_dynamic_module_callback_http_get_response_headers_count(
 bool envoy_dynamic_module_callback_http_get_response_headers(
     uintptr_t filter_envoy_ptr,
     uintptr_t* result_headers);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_get_attribute_string
+#cgo nocallback envoy_dynamic_module_callback_http_filter_get_attribute_string
+bool envoy_dynamic_module_callback_http_filter_get_attribute_string(
+    uintptr_t filter_envoy_ptr,
+    size_t attribute_id,
+    uintptr_t* result, size_t* result_length);
 */
 import "C"
 
@@ -374,6 +381,38 @@ type envoySlice struct {
 
 // envoyFilter implements [EnvoyHttpFilter].
 type envoyFilter struct{ raw uintptr }
+
+// GetRequestProtocol implements [EnvoyHttpFilter].
+func (e envoyFilter) GetRequestProtocol() string {
+	// https://github.com/envoyproxy/envoy/blob/05223ee2cd143d70b32402783c2a866a9dd18bd1/source/extensions/dynamic_modules/abi.h#L237-L372
+	return e.getStringAttribute(10) // request.protocol
+}
+
+// GetSourceAddress implements [EnvoyHttpFilter].
+func (e envoyFilter) GetSourceAddress() string {
+	// https://github.com/envoyproxy/envoy/blob/05223ee2cd143d70b32402783c2a866a9dd18bd1/source/extensions/dynamic_modules/abi.h#L237-L372
+	return e.getStringAttribute(24) // source.address
+}
+
+func (e envoyFilter) getStringAttribute(id int) string {
+	var resultBufferPtr *byte
+	var resultBufferLengthPtr int
+
+	ret := C.envoy_dynamic_module_callback_http_filter_get_attribute_string(
+		C.uintptr_t(e.raw),
+		C.size_t(id),
+		(*C.uintptr_t)(unsafe.Pointer(&resultBufferPtr)),
+		(*C.size_t)(unsafe.Pointer(&resultBufferLengthPtr)),
+	)
+
+	if !ret {
+		return ""
+	}
+
+	result := unsafe.Slice(resultBufferPtr, resultBufferLengthPtr)
+	runtime.KeepAlive(result)
+	return string(result)
+}
 
 // GetRequestHeaders implements EnvoyHttpFilter.
 func (e envoyFilter) GetRequestHeaders() map[string][]string {
