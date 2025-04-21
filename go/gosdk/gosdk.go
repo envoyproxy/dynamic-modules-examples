@@ -54,6 +54,11 @@ type EnvoyHttpFilter interface {
 	AppendResponseBody(data []byte) bool
 	// SendLocalReply sends a local reply to the client. This must not be used in after returning continue from the response headers phase.
 	SendLocalReply(statusCode uint32, headers [][2]string, body []byte)
+	// GetSourceAddress gets the source address of the request in the format of "IP:PORT".
+	// This corresponds to `source.address` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetSourceAddress() string
+	// GetRequestProtocol gets the request protocol. This corresponds to `request.protocol` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetRequestProtocol() string
 }
 
 // HttpFilter is an interface that represents each Http request.

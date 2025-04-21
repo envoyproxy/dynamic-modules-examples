@@ -33,6 +33,8 @@ func (p passthroughFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream b
 			fmt.Printf("gosdk: RequestHeaders, header: %s: %s\n", k, v)
 		}
 	}
+	fmt.Printf("gosdk: RequestHeaders, source address: %s\n", e.GetSourceAddress())
+	fmt.Printf("gosdk: RequestHeaders, request protocol: %s\n", e.GetRequestProtocol())
 	return gosdk.RequestHeadersStatusContinue
 }
 

@@ -55,10 +55,6 @@ func TestIntegration(t *testing.T) {
 	require.NoError(t, cmd.Start())
 	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
 
-	// Let's wait at least 5 seconds for Envoy to start since it might take a while
-	// to pull the image.
-	time.Sleep(5 * time.Second)
-
 	t.Run("http_access_logger", func(t *testing.T) {
 		t.Run("health checking", func(t *testing.T) {
 			require.Eventually(t, func() bool {
@@ -80,7 +76,7 @@ func TestIntegration(t *testing.T) {
 				}
 				t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
 				return resp.StatusCode == 200
-			}, 30*time.Second, 1*time.Second)
+			}, 120*time.Second, 1*time.Second)
 		})
 
 		require.Eventually(t, func() bool {
