@@ -28,6 +28,11 @@ func (p passthroughFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream b
 	fooValue, _ := e.GetRequestHeader("foo")
 	fmt.Printf("gosdk: RequestHeaders, foo: %v\n", fooValue)
 	fmt.Printf("gosdk: RequestHeaders, endOfStream: %v\n", endOfStream)
+	for k, vs := range e.GetRequestHeaders() {
+		for _, v := range vs {
+			fmt.Printf("gosdk: RequestHeaders, header: %s: %s\n", k, v)
+		}
+	}
 	return gosdk.RequestHeadersStatusContinue
 }
 
@@ -86,6 +91,11 @@ func (p passthroughFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, endOfStream 
 	}
 	fmt.Printf("gosdk: ResponseHeaders, status: %v\n", status)
 	e.SetResponseHeader("x-passthrough-response-header", []byte("true"))
+	for k, vs := range e.GetResponseHeaders() {
+		for _, v := range vs {
+			fmt.Printf("gosdk: ResponseHeaders, header: %s: %s\n", k, v)
+		}
+	}
 	return gosdk.ResponseHeadersStatusContinue
 }
 
