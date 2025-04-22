@@ -121,19 +121,21 @@ jobs:
         uses: docker/build-push-action@v6
         if: github.event_name != 'push'
         with:
-          # TODO: setup caches.
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push
         uses: docker/build-push-action@v6
         if: github.event_name == 'push'
         with:
-          # TODO: setup caches.
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }},ghcr.io/envoyproxy/dynamic-modules-examples:latest
+          tags: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }},ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   integration_test:
     needs: [docker_build]
@@ -167,5 +169,5 @@ jobs:
           key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
       - name: Run integration tests
         env:
-          ENVOY_IMAGE: ghcr.io/envoyproxy/dynamic-modules-examples:${{ github.sha }}
+          ENVOY_IMAGE: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
         run: go test -v -count=1 ./...
