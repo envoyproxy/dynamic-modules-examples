@@ -195,6 +195,24 @@ func TestIntegration(t *testing.T) {
 			return true
 		}, 30*time.Second, 200*time.Millisecond)
 
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1063/uuid", nil)
+			require.NoError(t, err)
+			req.Header.Add(gomoduleAuthHeader, "on_response_headers")
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+			return resp.StatusCode == 401
+		}, 30*time.Second, 200*time.Millisecond)
+
 		got200 := false
 		got403 := false
 		require.Eventually(t, func() bool {
@@ -210,10 +228,7 @@ func TestIntegration(t *testing.T) {
 				require.NoError(t, resp.Body.Close())
 			}()
 			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Logf("Envoy not ready yet: %v", err)
-				return false
-			}
+			require.NoError(t, err)
 			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
 			if resp.StatusCode == 200 {
 				got200 = true

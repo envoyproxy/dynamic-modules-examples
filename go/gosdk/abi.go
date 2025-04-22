@@ -92,7 +92,8 @@ bool envoy_dynamic_module_callback_http_get_response_body_vector_size(
     uintptr_t filter_envoy_ptr, size_t* size);
 
 #cgo noescape envoy_dynamic_module_callback_http_send_response
-#cgo nocallback envoy_dynamic_module_callback_http_send_response
+// Uncomment once https://github.com/envoyproxy/envoy/pull/39206 is merged.
+// #cgo nocallback envoy_dynamic_module_callback_http_send_response
 void envoy_dynamic_module_callback_http_send_response(
     uintptr_t filter_envoy_ptr, uint32_t status_code,
     uintptr_t headers_vector, size_t headers_vector_size,
@@ -203,7 +204,7 @@ func envoy_dynamic_module_on_http_filter_request_headers(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.RequestHeaders(envoyFilter{raw: filterEnvoyPtr}, bool(endOfStream))
+	status := pinned.obj.RequestHeaders(envoyFilter{pinned: pinned, raw: filterEnvoyPtr}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -214,15 +215,12 @@ func envoy_dynamic_module_on_http_filter_request_body(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.RequestBody(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.RequestBody(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
 //export envoy_dynamic_module_on_http_filter_request_trailers
-func envoy_dynamic_module_on_http_filter_request_trailers(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) uintptr {
+func envoy_dynamic_module_on_http_filter_request_trailers(uintptr, uintptr) uintptr {
 	return 0
 }
 
@@ -233,7 +231,7 @@ func envoy_dynamic_module_on_http_filter_response_headers(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.ResponseHeaders(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.ResponseHeaders(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -244,23 +242,17 @@ func envoy_dynamic_module_on_http_filter_response_body(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.ResponseBody(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.ResponseBody(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
 //export envoy_dynamic_module_on_http_filter_response_trailers
-func envoy_dynamic_module_on_http_filter_response_trailers(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) uintptr {
+func envoy_dynamic_module_on_http_filter_response_trailers(uintptr, uintptr) uintptr {
 	return 0
 }
 
 //export envoy_dynamic_module_on_http_filter_stream_complete
-func envoy_dynamic_module_on_http_filter_stream_complete(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) {
+func envoy_dynamic_module_on_http_filter_stream_complete(uintptr, uintptr) {
 }
 
 // GetRequestHeader implements [EnvoyHttpFilter].
@@ -380,7 +372,10 @@ type envoySlice struct {
 }
 
 // envoyFilter implements [EnvoyHttpFilter].
-type envoyFilter struct{ raw uintptr }
+type envoyFilter struct {
+	raw    uintptr
+	pinned *pinedHttpFilter
+}
 
 // GetRequestProtocol implements [EnvoyHttpFilter].
 func (e envoyFilter) GetRequestProtocol() string {
