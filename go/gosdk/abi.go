@@ -204,7 +204,7 @@ func envoy_dynamic_module_on_http_filter_request_headers(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.RequestHeaders(envoyFilter{pinned: pinned, raw: filterEnvoyPtr}, bool(endOfStream))
+	status := pinned.obj.RequestHeaders(envoyFilter{raw: filterEnvoyPtr}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -215,7 +215,7 @@ func envoy_dynamic_module_on_http_filter_request_body(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.RequestBody(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.RequestBody(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -231,7 +231,7 @@ func envoy_dynamic_module_on_http_filter_response_headers(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.ResponseHeaders(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.ResponseHeaders(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -242,7 +242,7 @@ func envoy_dynamic_module_on_http_filter_response_body(
 	endOfStream bool,
 ) uintptr {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
-	status := pinned.obj.ResponseBody(envoyFilter{pinned: pinned, raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
+	status := pinned.obj.ResponseBody(envoyFilter{raw: uintptr(filterEnvoyPtr)}, bool(endOfStream))
 	return uintptr(status)
 }
 
@@ -372,10 +372,7 @@ type envoySlice struct {
 }
 
 // envoyFilter implements [EnvoyHttpFilter].
-type envoyFilter struct {
-	raw    uintptr
-	pinned *pinedHttpFilter
-}
+type envoyFilter struct{ raw uintptr }
 
 // GetRequestProtocol implements [EnvoyHttpFilter].
 func (e envoyFilter) GetRequestProtocol() string {
