@@ -394,6 +394,26 @@ func (e envoyFilter) GetSourceAddress() string {
 	return e.getStringAttribute(24) // source.address
 }
 
+func (e envoyFilter) GetRequestMethod() string {
+	return e.getStringAttribute(4) // request.method
+}
+
+func (e envoyFilter) GetRequestHost() string {
+	// return e.getStringAttribute(2) // request.host
+	host, _ := e.GetRequestHeader(":authority")
+	return host
+}
+
+func (e envoyFilter) GetRequestURIPath() string {
+	return e.getStringAttribute(1)
+}
+
+func (e envoyFilter) GetRequestPath() string {
+	// return e.getStringAttribute(0) // request.path
+	host, _ := e.GetRequestHeader(":path")
+	return host
+}
+
 func (e envoyFilter) getStringAttribute(id int) string {
 	var resultBufferPtr *byte
 	var resultBufferLengthPtr int

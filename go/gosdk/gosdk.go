@@ -59,6 +59,13 @@ type EnvoyHttpFilter interface {
 	GetSourceAddress() string
 	// GetRequestProtocol gets the request protocol. This corresponds to `request.protocol` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
 	GetRequestProtocol() string
+	// GetRequestMethod gets the request method. This corresponds to `request.method` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetRequestMethod() string
+	// GetRequestHost gets the request host. This corresponds to `request.host` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetRequestHost() string
+	// GetRequestPath gets the request path. This corresponds to `request.path` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetRequestPath() string
+	GetRequestURIPath() string
 }
 
 // HttpFilter is an interface that represents each Http request.
