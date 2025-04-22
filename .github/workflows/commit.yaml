@@ -132,12 +132,13 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
             ~/go/bin
-          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
+          key: integration-tests-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
 
       - name: Run integration tests
         env:
           ENVOY_IMAGE: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
         run: go test -v -count=1 ./...
+        working-directory: ./integration
 
       - name: Login into GitHub Container Registry
         # This step will only run on push events to the main branch.
@@ -192,7 +193,7 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
             ~/go/bin
-          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
+          key: integration-tests-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
       - name: Run integration tests
         env:
           ENVOY_IMAGE: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
