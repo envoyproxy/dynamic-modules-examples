@@ -92,7 +92,8 @@ bool envoy_dynamic_module_callback_http_get_response_body_vector_size(
     uintptr_t filter_envoy_ptr, size_t* size);
 
 #cgo noescape envoy_dynamic_module_callback_http_send_response
-#cgo nocallback envoy_dynamic_module_callback_http_send_response
+// Uncomment once https://github.com/envoyproxy/envoy/pull/39206 is merged.
+// #cgo nocallback envoy_dynamic_module_callback_http_send_response
 void envoy_dynamic_module_callback_http_send_response(
     uintptr_t filter_envoy_ptr, uint32_t status_code,
     uintptr_t headers_vector, size_t headers_vector_size,
@@ -219,10 +220,7 @@ func envoy_dynamic_module_on_http_filter_request_body(
 }
 
 //export envoy_dynamic_module_on_http_filter_request_trailers
-func envoy_dynamic_module_on_http_filter_request_trailers(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) uintptr {
+func envoy_dynamic_module_on_http_filter_request_trailers(uintptr, uintptr) uintptr {
 	return 0
 }
 
@@ -249,18 +247,12 @@ func envoy_dynamic_module_on_http_filter_response_body(
 }
 
 //export envoy_dynamic_module_on_http_filter_response_trailers
-func envoy_dynamic_module_on_http_filter_response_trailers(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) uintptr {
+func envoy_dynamic_module_on_http_filter_response_trailers(uintptr, uintptr) uintptr {
 	return 0
 }
 
 //export envoy_dynamic_module_on_http_filter_stream_complete
-func envoy_dynamic_module_on_http_filter_stream_complete(
-	filterEnvoyPtr uintptr,
-	filterModulePtr uintptr,
-) {
+func envoy_dynamic_module_on_http_filter_stream_complete(uintptr, uintptr) {
 }
 
 // GetRequestHeader implements [EnvoyHttpFilter].
