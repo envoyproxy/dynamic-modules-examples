@@ -97,8 +97,8 @@ jobs:
       - run: go build -buildmode=c-shared -o main.so
       - run: go tool golangci-lint run
 
-  docker_build:
-    name: Build and Push multi-arch Docker image
+  docker_build_and_integration_test:
+    name: Build and Run Integration Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -110,26 +110,48 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Docker Build
+        uses: docker/build-push-action@v6
+        if: github.event_name != 'push'
+        with:
+          platforms: linux/amd64,linux/arm64
+          load: true
+          push: false
+          tags: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version-file: integration/go.mod
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+            ~/go/bin
+          key: unittest-${{ hashFiles('**/go.mod', '**/go.sum') }}-${{ matrix.platform.os }}
+
+      - name: Run integration tests
+        env:
+          ENVOY_IMAGE: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
+        run: go test -v -count=1 ./...
+
       - name: Login into GitHub Container Registry
+        # This step will only run on push events to the main branch.
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        if: github.event_name != 'push'
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/dynamic-modules-examples:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
+      - name: Build and Push
+        # This step will only run on push events to the main branch.
         if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: true
@@ -137,9 +159,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  integration_test:
+  integration_test_on_main:
     needs: [docker_build]
     name: Integration Test (${{ matrix.platform.arch }})
+    # This will only run on push events to the main branch.
+    # Mainly to check the multi-arch image by running the
+    # integration tests on both architectures.
+    if: github.event_name == 'push'
     runs-on: ${{ matrix.platform.os }}
     defaults:
       run:
