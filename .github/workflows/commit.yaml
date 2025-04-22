@@ -160,7 +160,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   integration_test_on_main:
-    needs: [docker_build]
+    needs: [docker_build_and_integration_test]
     name: Integration Test (${{ matrix.platform.arch }})
     # This will only run on push events to the main branch.
     # Mainly to check the multi-arch image by running the
