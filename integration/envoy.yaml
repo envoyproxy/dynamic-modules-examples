@@ -89,8 +89,14 @@ static_resources:
                             prefix: "/"
                           route:
                             cluster: httpbin
+                          typedPerFilterConfig:
+                            # Enable the filter for this route only.
+                            dynamic_modules/per-route/header_auth:
+                              '@type': type.googleapis.com/envoy.config.route.v3.FilterConfig
+                              config: {}
                 http_filters:
-                  - name: dynamic_modules/header_auth
+                  - name: dynamic_modules/per-route/header_auth
+                    disabled: true # Disable at the listener level.
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
                       "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
