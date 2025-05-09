@@ -9,7 +9,7 @@ services:
     volumes:
       - ./:/examples
     working_dir: /examples/integration
-    command: ["envoy", "--config-path", "./envoy.yaml"]
+    command: ["/bin/sh", "-c", "mkdir -p ./access_logs && envoy --config-path ./envoy.yaml"]
     networks:
       - envoy-net
 
