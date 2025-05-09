@@ -84,6 +84,28 @@ If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environmen
 ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
 ```
 
+## Quick Start with Docker Compose
+
+To quickly start the example, you can use `docker-compose` to set up the environment:
+
+```bash
+docker-compose up -d
+```
+
+This will start the Envoy proxy along with the echo server in the background. Once the setup is complete, you can test the example by running:
+
+```bash
+curl localhost:1062/uuid
+```
+
+This command tests the passthrough and access log filters. If the setup is successful, you should see a response like:
+
+```
+Hello from echo server
+```
+
+You can also explore other endpoints defined in the `envoy.yaml` configuration.
+
 [5b88f941da971de57f29286103c20770811ec67f]: https://github.com/envoyproxy/envoy/tree/5b88f941da971de57f29286103c20770811ec67f
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
