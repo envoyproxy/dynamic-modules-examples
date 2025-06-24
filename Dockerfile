@@ -46,7 +46,7 @@ RUN CC="zig cc -target aarch64-linux-gnu" CXX="zig c++ -target aarch64-linux-gnu
 RUN CC="zig cc -target x86_64-linux-gnu" CXX="zig c++ -target x86_64-linux-gnu" CGO_ENABLED=1 GOARCH=amd64 go build -buildmode=c-shared -o /build/amd64_libgo_module.so .
 
 ##### Build the final image #####
-FROM envoyproxy/envoy-dev:5b88f941da971de57f29286103c20770811ec67f AS envoy
+FROM envoyproxy/envoy-dev:73fe00fc139fd5053f4c4a5d66569cc254449896 AS envoy
 ARG TARGETARCH
 ENV ENVOY_DYNAMIC_MODULES_SEARCH_PATH=/usr/local/lib
 COPY --from=rust_builder /build/${TARGETARCH}_librust_module.so /usr/local/lib/librust_module.so

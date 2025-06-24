@@ -3,7 +3,7 @@
 package gosdk
 
 // Following is a distillation of the Envoy ABI for dynamic modules:
-// https://github.com/envoyproxy/envoy/blob/5b88f941da971de57f29286103c20770811ec67f/source/extensions/dynamic_modules/abi.h
+// https://github.com/envoyproxy/envoy/blob/73fe00fc139fd5053f4c4a5d66569cc254449896/source/extensions/dynamic_modules/abi.h
 //
 // Why not using the header file directly? That is because Go runtime complains
 // about passing pointers to C code on the boundary. In the following code, we replace
@@ -136,8 +136,8 @@ import (
 	"unsafe"
 )
 
-// https://github.com/envoyproxy/envoy/blob/5b88f941da971de57f29286103c20770811ec67f/source/extensions/dynamic_modules/abi_version.h
-var version = append([]byte("0874b1e9587ef1dbd355ffde32f3caf424cb819df552de4833b2ed5b8996c18b"), 0)
+// https://github.com/envoyproxy/envoy/blob/73fe00fc139fd5053f4c4a5d66569cc254449896/source/extensions/dynamic_modules/abi_version.h
+var version = append([]byte("cb17cd829c177bc6b75a920283a3347b90d5aaa4d5e723eaa33bad31c8c5b9a9"), 0)
 
 //export envoy_dynamic_module_on_program_init
 func envoy_dynamic_module_on_program_init() uintptr {
@@ -253,6 +253,28 @@ func envoy_dynamic_module_on_http_filter_response_trailers(uintptr, uintptr) uin
 
 //export envoy_dynamic_module_on_http_filter_stream_complete
 func envoy_dynamic_module_on_http_filter_stream_complete(uintptr, uintptr) {
+}
+
+//export envoy_dynamic_module_on_http_filter_http_callout_done
+func envoy_dynamic_module_on_http_filter_http_callout_done(
+	filterEnvoyPtr uintptr,
+	filterModulePtr uintptr,
+	calloutID C.uint32_t,
+	result C.uint32_t,
+	headersPtr uintptr,
+	headersSize C.size_t,
+	bodyVectorPtr uintptr,
+	bodyVectorSize C.size_t,
+) {
+	panic("TODO")
+}
+
+//export envoy_dynamic_module_on_http_filter_scheduled
+func envoy_dynamic_module_on_http_filter_scheduled(
+	filterEnvoyPtr uintptr,
+	filterModulePtr uintptr,
+	eventID C.uint64_t) {
+	panic("TODO")
 }
 
 // GetRequestHeader implements [EnvoyHttpFilter].
