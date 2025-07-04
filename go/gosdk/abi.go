@@ -127,6 +127,31 @@ bool envoy_dynamic_module_callback_http_filter_get_attribute_string(
     uintptr_t filter_envoy_ptr,
     size_t attribute_id,
     uintptr_t* result, size_t* result_length);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_continue_decoding
+#cgo nocallback envoy_dynamic_module_callback_http_filter_continue_decoding
+void envoy_dynamic_module_callback_http_filter_continue_decoding(
+    uintptr_t filter_envoy_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_continue_encoding
+#cgo nocallback envoy_dynamic_module_callback_http_filter_continue_encoding
+void envoy_dynamic_module_callback_http_filter_continue_encoding(
+    uintptr_t filter_envoy_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_scheduler_new
+#cgo nocallback envoy_dynamic_module_callback_http_filter_scheduler_new
+uintptr_t envoy_dynamic_module_callback_http_filter_scheduler_new(
+	uintptr_t filter_envoy_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_scheduler_delete
+#cgo nocallback envoy_dynamic_module_callback_http_filter_scheduler_delete
+void envoy_dynamic_module_callback_http_filter_scheduler_delete(
+	uintptr_t scheduler_ptr);
+
+#cgo noescape envoy_dynamic_module_callback_http_filter_scheduler_commit
+#cgo nocallback envoy_dynamic_module_callback_http_filter_scheduler_commit
+void envoy_dynamic_module_callback_http_filter_scheduler_commit(
+	uintptr_t scheduler_ptr, uint64_t event_id);
 */
 import "C"
 
@@ -274,7 +299,9 @@ func envoy_dynamic_module_on_http_filter_scheduled(
 	filterEnvoyPtr uintptr,
 	filterModulePtr uintptr,
 	eventID C.uint64_t) {
-	panic("TODO")
+	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
+	// Call the Scheduled method of the filter.
+	pinned.obj.Sheduled(envoyFilter{raw: uintptr(filterEnvoyPtr)}, uint64(eventID))
 }
 
 // GetRequestHeader implements [EnvoyHttpFilter].
@@ -395,6 +422,40 @@ type envoySlice struct {
 
 // envoyFilter implements [EnvoyHttpFilter].
 type envoyFilter struct{ raw uintptr }
+
+// ContinueRequest implements EnvoyHttpFilter.
+func (e envoyFilter) ContinueRequest() {
+	C.envoy_dynamic_module_callback_http_filter_continue_decoding(C.uintptr_t(e.raw))
+}
+
+// ContinueResponse implements EnvoyHttpFilter.
+func (e envoyFilter) ContinueResponse() {
+	C.envoy_dynamic_module_callback_http_filter_continue_encoding(C.uintptr_t(e.raw))
+}
+
+// NewScheduler implements EnvoyHttpFilter.
+func (e envoyFilter) NewScheduler() Scheduler {
+	// Create a new scheduler for the filter.
+	schedulerPtr := C.envoy_dynamic_module_callback_http_filter_scheduler_new(C.uintptr_t(e.raw))
+	if schedulerPtr == 0 {
+		return nil
+	}
+	return &envoyFilterScheduler{raw: uintptr(schedulerPtr)}
+}
+
+type envoyFilterScheduler struct {
+	raw uintptr
+}
+
+// Close implements Scheduler.
+func (e *envoyFilterScheduler) Close() {
+	C.envoy_dynamic_module_callback_http_filter_scheduler_delete(C.uintptr_t(e.raw))
+}
+
+// Commit implements Scheduler.
+func (e *envoyFilterScheduler) Commit(eventID uint64) {
+	C.envoy_dynamic_module_callback_http_filter_scheduler_commit(C.uintptr_t(e.raw), C.uint64_t(eventID))
+}
 
 // GetRequestProtocol implements [EnvoyHttpFilter].
 func (e envoyFilter) GetRequestProtocol() string {

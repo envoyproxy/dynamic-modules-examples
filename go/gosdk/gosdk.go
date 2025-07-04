@@ -27,6 +27,8 @@ type HttpFilterConfig interface {
 // This is passed to each event hook of the HttpFilter.
 //
 // **WARNING**: This must not outlive each event hook since there's no guarantee that the EnvoyHttpFilter will be valid after the event hook is returned.
+// To perform the asynchronous operations, use [EnvoyHttpFilter.NewScheduler] to create a [Scheduler] and perform the operations in a separate Goroutine.
+// Then, use the [Scheduler.Commit] method to commit the event to the Envoy filter on the correct worker thread to continue processing the request.
 type EnvoyHttpFilter interface {
 	// GetRequestHeader gets the first value of the request header. Returns the value and true if the header is found.
 	GetRequestHeader(key string) (string, bool)
@@ -59,6 +61,26 @@ type EnvoyHttpFilter interface {
 	GetSourceAddress() string
 	// GetRequestProtocol gets the request protocol. This corresponds to `request.protocol` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
 	GetRequestProtocol() string
+	// NewScheduler creates a new Scheduler that can be used to schedule events to the correct Envoy worker thread.
+	// Created schedulers must be closed when they are no longer needed.
+	//
+	// Returns nil if this is called from any other than normal event hooks such as RequestHeaders, RequestBody, ResponseHeaders, and ResponseBody.
+	NewScheduler() Scheduler
+	// ContinueRequest continues the request processing after the Stop variants are returned from the normal event hooks such as RequestHeaders, RequestBody, ResponseHeaders, and ResponseBody.
+	// Mainly this is intented to be used during the HttpFilter.Scheduled method being called.
+	ContinueRequest()
+	// ContinueResponse is the same as ContinueRequest but for the response processing.
+	ContinueResponse()
+}
+
+// Scheduler is an interface that can be used to schedule a generic event to the correct Envoy worker thread.
+//
+// This is created via [EnvoyHttpFilter.NewScheduler] and can be passed across Goroutines.
+type Scheduler interface {
+	// Commit commits the event to the Envoy filter on the correct worker thread.
+	// The eventID is a unique identifier for the event, and it can be used to distinguish between different events.
+	Commit(eventID uint64)
+	Close()
 }
 
 // HttpFilter is an interface that represents each Http request.
@@ -76,6 +98,9 @@ type HttpFilter interface {
 	// ResponseBody is called when the response body is received.
 	ResponseBody(e EnvoyHttpFilter, endOfStream bool) ResponseBodyStatus
 	// TODO: add ResponseTrailers support.
+
+	// Scheuled is called when the filter is scheduled to run.
+	Sheduled(e EnvoyHttpFilter, eventID uint64)
 
 	// Destroy is called when the stream is destroyed.
 	Destroy()
