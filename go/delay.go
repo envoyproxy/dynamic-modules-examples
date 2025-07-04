@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -35,7 +34,6 @@ func (p *delayFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream bool) 
 	// Check if the headers contain the "do-delay" header to trigger the delay.
 	if _, ok := e.GetRequestHeader("do-delay"); !ok {
 		// If the header is not present, continue the request processing.
-		fmt.Println("gosdk: RequestHeaders, do-delay header not found, continuing request processing")
 		return gosdk.RequestHeadersStatusContinue
 	}
 
@@ -43,12 +41,13 @@ func (p *delayFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream bool) 
 	now := time.Now()
 	p.onRequestHeaders = now
 	go func() {
+		// Scheduler must be closed to avoid memory leaks.
+		defer schduler.Close()
 		// Simulate some delay.
 		time.Sleep(2 * time.Second)
 		// Commit the event to continue the request processing.
 		schduler.Commit(0)
 	}()
-	fmt.Printf("gosdk: RequestHeaders, delaying request processing for 2 seconds at %s\n", now)
 	return gosdk.RequestHeadersStatusStopIteration
 }
 
@@ -57,7 +56,6 @@ func (p *delayFilter) Sheduled(e gosdk.EnvoyHttpFilter, eventID uint64) {
 	if eventID != 0 {
 		panic("unexpected eventID in Sheduled: " + strconv.Itoa(int(eventID)))
 	}
-	fmt.Println("gosdk: Sheduled, continuing request processing after delay")
 	p.delayLapsed = time.Since(p.onRequestHeaders)
 	// We can insert some headers at this phase.
 	e.SetRequestHeader("delay-filter-on-scheduled", []byte("yes"))
