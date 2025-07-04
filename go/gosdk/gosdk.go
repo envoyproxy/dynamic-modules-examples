@@ -80,6 +80,8 @@ type Scheduler interface {
 	// Commit commits the event to the Envoy filter on the correct worker thread.
 	// The eventID is a unique identifier for the event, and it can be used to distinguish between different events.
 	Commit(eventID uint64)
+	// Close closes the scheduler and releases any resources associated with it.
+	// This must be called when the scheduler is no longer needed to avoid memory leaks.
 	Close()
 }
 
@@ -99,7 +101,8 @@ type HttpFilter interface {
 	ResponseBody(e EnvoyHttpFilter, endOfStream bool) ResponseBodyStatus
 	// TODO: add ResponseTrailers support.
 
-	// Scheuled is called when the filter is scheduled to run.
+	// Scheuled is called when the filter is scheduled to run on the Envoy worker thread.
+	// Such event is created via [Scheduler.Commit] and the eventID is the unique identifier for the event.
 	Sheduled(e EnvoyHttpFilter, eventID uint64)
 
 	// Destroy is called when the stream is destroyed.
