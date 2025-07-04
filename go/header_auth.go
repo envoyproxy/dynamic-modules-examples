@@ -28,6 +28,9 @@ func (p headerAuthFilterConfig) NewFilter() gosdk.HttpFilter {
 	return &headerAuthFilter{authHeaderName: p.authHeaderName}
 }
 
+// Sheduled implements gosdk.HttpFilter.
+func (p headerAuthFilter) Sheduled(gosdk.EnvoyHttpFilter, uint64) {}
+
 // Destroy implements [gosdk.HttpFilter].
 func (p *headerAuthFilter) Destroy() {}
 
