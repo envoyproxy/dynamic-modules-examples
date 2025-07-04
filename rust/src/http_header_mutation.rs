@@ -21,7 +21,7 @@ impl FilterConfig {
         let filter_config: FilterConfig = match serde_json::from_str(filter_config) {
             Ok(cfg) => cfg,
             Err(err) => {
-                eprintln!("Error parsing filter config: {}", err);
+                eprintln!("Error parsing filter config: {err}");
                 return None;
             }
         };

@@ -20,7 +20,7 @@ impl FilterConfig {
         let re = match Pattern::new(filter_config) {
             Ok(cfg) => cfg,
             Err(err) => {
-                eprintln!("Error parsing filter config: {}", err);
+                eprintln!("Error parsing filter config: {err}");
                 return None;
             }
         };

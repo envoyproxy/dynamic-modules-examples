@@ -37,7 +37,7 @@ impl FilterConfig {
         let filter_config: FilterConfigData = match serde_json::from_str(filter_config) {
             Ok(cfg) => cfg,
             Err(err) => {
-                eprintln!("Error parsing filter config: {}", err);
+                eprintln!("Error parsing filter config: {err}");
                 return None;
             }
         };
@@ -50,7 +50,7 @@ impl FilterConfig {
             let mut file = match std::fs::File::create(file_path) {
                 Ok(file) => file,
                 Err(err) => {
-                    eprintln!("Error creating log file: {}", err);
+                    eprintln!("Error creating log file: {err}");
                     return None;
                 }
             };
@@ -61,9 +61,9 @@ impl FilterConfig {
                         rx_lock.recv()
                     };
                     match message {
-                        Ok(msg) => match writeln!(file, "{}", msg) {
+                        Ok(msg) => match writeln!(file, "{msg}") {
                             Ok(_) => {}
-                            Err(err) => eprintln!("Error writing to log file: {}", err),
+                            Err(err) => eprintln!("Error writing to log file: {err}"),
                         },
                         // When the channel is closed, exit the loop.
                         Err(_) => break,
@@ -110,7 +110,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
             let Some(value) = std::str::from_utf8(value.as_slice()).ok() else {
                 continue;
             };
-            self.request_headers.push(format!("{}: {}", key, value));
+            self.request_headers.push(format!("{key}: {value}"));
         }
         abi::envoy_dynamic_module_type_on_http_filter_request_headers_status::Continue
     }
@@ -127,7 +127,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
             let Some(value) = std::str::from_utf8(value.as_slice()).ok() else {
                 continue;
             };
-            self.response_headers.push(format!("{}: {}", key, value));
+            self.response_headers.push(format!("{key}: {value}"));
         }
         abi::envoy_dynamic_module_type_on_http_filter_response_headers_status::Continue
     }
@@ -148,7 +148,7 @@ impl Drop for Filter {
         .unwrap();
         let err = self.tx.send(message);
         if let Err(err) = err {
-            eprintln!("Error sending log message: {}", err);
+            eprintln!("Error sending log message: {err}");
         }
     }
 }

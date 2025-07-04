@@ -43,6 +43,6 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
         "header_mutation" => http_header_mutation::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
-        _ => panic!("Unknown filter name: {}", filter_name),
+        _ => panic!("Unknown filter name: {filter_name}"),
     }
 }
