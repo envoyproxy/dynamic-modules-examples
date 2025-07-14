@@ -8,7 +8,7 @@ on:
 
 jobs:
   rust:
-    name: Rust Build and Test (${{ matrix.platform.arch }})
+    name: Rust Build and Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
     defaults:
       run:
@@ -20,6 +20,8 @@ jobs:
           - os: ubuntu-22.04
             arch: amd64
           - os: ubuntu-22.04-arm
+            arch: arm64
+          - os: macos-latest
             arch: arm64
 
     steps:
@@ -62,7 +64,7 @@ jobs:
         run: cargo test --verbose
 
   go:
-    name: Go Build and Test (${{ matrix.platform.arch }})
+    name: Go Build and Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
     defaults:
       run:
@@ -74,6 +76,8 @@ jobs:
           - os: ubuntu-22.04
             arch: amd64
           - os: ubuntu-22.04-arm
+            arch: arm64
+          - os: macos-latest
             arch: arm64
 
     steps:
