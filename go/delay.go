@@ -51,10 +51,10 @@ func (p *delayFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream bool) 
 	return gosdk.RequestHeadersStatusStopIteration
 }
 
-// Sheduled implements gosdk.HttpFilter.
-func (p *delayFilter) Sheduled(e gosdk.EnvoyHttpFilter, eventID uint64) {
+// Scheduled implements gosdk.HttpFilter.
+func (p *delayFilter) Scheduled(e gosdk.EnvoyHttpFilter, eventID uint64) {
 	if eventID != 0 {
-		panic("unexpected eventID in Sheduled: " + strconv.Itoa(int(eventID)))
+		panic("unexpected eventID in Scheduled: " + strconv.Itoa(int(eventID)))
 	}
 	p.delayLapsed = time.Since(p.onRequestHeaders)
 	// We can insert some headers at this phase.

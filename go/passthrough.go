@@ -20,8 +20,8 @@ func (p passthroughFilterConfig) Destroy() {}
 // NewFilter implements [gosdk.HttpFilterConfig].
 func (p passthroughFilterConfig) NewFilter() gosdk.HttpFilter { return passthroughFilter{} }
 
-// Sheduled implements gosdk.HttpFilter.
-func (p passthroughFilter) Sheduled(gosdk.EnvoyHttpFilter, uint64) {}
+// Scheduled implements gosdk.HttpFilter.
+func (p passthroughFilter) Scheduled(gosdk.EnvoyHttpFilter, uint64) {}
 
 // Destroy implements [gosdk.HttpFilter].
 func (p passthroughFilter) Destroy() {}

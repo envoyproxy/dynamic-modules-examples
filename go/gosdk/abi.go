@@ -301,7 +301,7 @@ func envoy_dynamic_module_on_http_filter_scheduled(
 	eventID C.uint64_t) {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
 	// Call the Scheduled method of the filter.
-	pinned.obj.Sheduled(envoyFilter{raw: uintptr(filterEnvoyPtr)}, uint64(eventID))
+	pinned.obj.Scheduled(envoyFilter{raw: uintptr(filterEnvoyPtr)}, uint64(eventID))
 }
 
 // GetRequestHeader implements [EnvoyHttpFilter].
