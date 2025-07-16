@@ -103,7 +103,7 @@ type HttpFilter interface {
 
 	// Scheuled is called when the filter is scheduled to run on the Envoy worker thread.
 	// Such event is created via [Scheduler.Commit] and the eventID is the unique identifier for the event.
-	Sheduled(e EnvoyHttpFilter, eventID uint64)
+	Scheduled(e EnvoyHttpFilter, eventID uint64)
 
 	// Destroy is called when the stream is destroyed.
 	Destroy()

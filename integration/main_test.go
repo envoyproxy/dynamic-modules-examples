@@ -149,7 +149,7 @@ func TestIntegration(t *testing.T) {
 			t.Logf("response: headers=%v, body=%s", resp.Header, string(body))
 			require.Equal(t, 200, resp.StatusCode)
 
-			// Check the request header "delay-filter-on-scheduled: yes" added in the Sheduled phase.
+			// Check the request header "delay-filter-on-scheduled: yes" added in the Scheduled phase.
 			type httpBinHeadersBody struct {
 				Headers map[string][]string `json:"headers"`
 			}
