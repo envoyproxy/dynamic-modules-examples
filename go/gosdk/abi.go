@@ -162,7 +162,7 @@ import (
 )
 
 // https://github.com/envoyproxy/envoy/blob/84305a6cb64bd55aaf606bdd53de7cd6080427a1/source/extensions/dynamic_modules/abi_version.h
-var version = append([]byte("cb17cd829c177bc6b75a920283a3347b90d5aaa4d5e723eaa33bad31c8c5b9a9"), 0)
+var version = append([]byte("c32cc7696650a6a54653327e6609734a8b32aeb5c80a6a664687636a0d671666"), 0)
 
 //export envoy_dynamic_module_on_program_init
 func envoy_dynamic_module_on_program_init() uintptr {
