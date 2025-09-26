@@ -21,6 +21,9 @@ impl FilterConfig {
     ) -> Self {
         Self {
             _filter_config: filter_config.to_string(),
+            // Handles to metrics such as counters, gauges, and histograms are allocated at filter config creation time. These handles
+            // are opaque ids that can be used to record statistics during the lifecycle of the filter. These handles last until the 
+            // filter config is destroyed.
             route_latency: envoy_filter_config
                 .define_histogram_vec("route_latency_ms", &["route_name"])
                 .unwrap(),
@@ -49,6 +52,7 @@ pub struct Filter {
 }
 
 impl Filter {
+    /// This records the latency of the request. Note that it uses the handle to the histogram vector that was allocated at filter config creation time.
     fn record_latency<EHF: EnvoyHttpFilter>(&mut self, envoy_filter: &mut EHF) {
         let Some(start_time) = self.start_time else {
             return;
