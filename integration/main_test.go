@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"cmp"
 	"encoding/json"
 	"io"
@@ -14,8 +13,6 @@ import (
 	"time"
 
 	"github.com/mccutchen/go-httpbin/v2/httpbin"
-	io_prometheus_client "github.com/prometheus/client_model/go"
-	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -374,33 +371,22 @@ func TestIntegration(t *testing.T) {
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 			lastStatsOutput = string(body)
-
-			decoder := expfmt.NewDecoder(bytes.NewReader(body), expfmt.NewFormat(expfmt.TypeTextPlain))
-			for {
-				var metricFamily io_prometheus_client.MetricFamily
-				err := decoder.Decode(&metricFamily)
-				if err == io.EOF {
-					break
-				}
-				require.NoError(t, err)
-
-				if metricFamily.GetName() != "route_latency_ms" {
+			for line := range strings.Lines(lastStatsOutput) {
+				line = strings.TrimSpace(line)
+				if !strings.HasPrefix(line, "route_latency_ms_count") {
 					continue
 				}
-				for _, metric := range metricFamily.GetMetric() {
-					hist := metric.GetHistogram()
-					require.NotNil(t, hist)
-					labels := make(map[string]string)
-					for _, label := range metric.GetLabel() {
-						labels[label.GetName()] = label.GetValue()
-					}
-					require.Equal(t, map[string]string{"version": "v1.0.0", "route_name": "catch_all"}, labels)
-					if hist.GetSampleCount() > 0 {
-						return true
-					}
+				t.Logf("found route_latency_ms metric line: %s", line)
+				parts := strings.Fields(line)
+				require.Equal(t, 2, len(parts), "expected 2 fields in route_latency_ms metric line")
+				require.Equal(t, `route_latency_ms_count{version="v1.0.0",route_name="catch_all"}`, parts[0], "unexpected metric name and labels")
+				count, err := strconv.Atoi(parts[1])
+				require.NoError(t, err, "expected integer count in route_latency_ms metric line")
+				if count >= 1 {
+					return true
 				}
 			}
-			t.Logf("route_latency_ms metric not found or no samples yet")
+			t.Logf("route_latency_ms metric not found")
 			return false
 		}, 5*time.Second, 200*time.Millisecond)
 	})
