@@ -32,17 +32,17 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     _envoy_filter_config: &mut EC,
     filter_name: &str,
     filter_config: &[u8],
-) -> Option<Box<dyn HttpFilterConfig<EC, EHF>>> {
+) -> Option<Box<dyn HttpFilterConfig<EHF>>> {
     let filter_config = std::str::from_utf8(filter_config).unwrap();
     match filter_name {
         "passthrough" => Some(Box::new(http_passthrough::FilterConfig::new(filter_config))),
         "access_logger" => http_access_logger::FilterConfig::new(filter_config)
-            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         "random_auth" => Some(Box::new(http_random_auth::FilterConfig::new(filter_config))),
         "zero_copy_regex_waf" => http_zero_copy_regex_waf::FilterConfig::new(filter_config)
-            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         "header_mutation" => http_header_mutation::FilterConfig::new(filter_config)
-            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EC, EHF>>),
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         _ => panic!("Unknown filter name: {filter_name}"),
     }
 }

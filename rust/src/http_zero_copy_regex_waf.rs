@@ -28,9 +28,9 @@ impl FilterConfig {
     }
 }
 
-impl<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter> HttpFilterConfig<EC, EHF> for FilterConfig {
+impl<EHF: EnvoyHttpFilter> HttpFilterConfig<EHF> for FilterConfig {
     /// This is called for each new HTTP filter.
-    fn new_http_filter(&mut self, _envoy: &mut EC) -> Box<dyn HttpFilter<EHF>> {
+    fn new_http_filter(&mut self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
         Box::new(Filter {
             re: self.re.clone(),
         })
@@ -121,19 +121,19 @@ impl std::io::Read for BodyReader<'_> {
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::E;
+
+    use envoy_proxy_dynamic_modules_rust_sdk::abi::envoy_dynamic_module_type_metrics_result;
+
     use super::*;
 
     #[test]
     /// This demonstrates how to write a test without Envoy using a mock provided by the SDK.
     fn test_filter() {
-        struct EnvoyConfig {}
-        impl EnvoyHttpFilterConfig for EnvoyConfig {}
-        let mut envoy_config = EnvoyConfig {};
         let mut filter_config = FilterConfig::new("Hello [Ww].+").unwrap();
-        let mut filter: Box<dyn HttpFilter<MockEnvoyHttpFilter>> =
-            filter_config.new_http_filter(&mut envoy_config);
-
         let mut envoy_filter = MockEnvoyHttpFilter::new();
+        let mut filter: Box<dyn HttpFilter<MockEnvoyHttpFilter>> =
+            filter_config.new_http_filter(&mut envoy_filter);
 
         // Not end of stream, so we should buffer the request body.
         assert_eq!(filter.on_request_body(&mut envoy_filter, false),  abi::envoy_dynamic_module_type_on_http_filter_request_body_status::StopIterationAndBuffer);
