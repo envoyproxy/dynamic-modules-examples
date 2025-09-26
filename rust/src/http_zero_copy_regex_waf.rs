@@ -121,10 +121,6 @@ impl std::io::Read for BodyReader<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::E;
-
-    use envoy_proxy_dynamic_modules_rust_sdk::abi::envoy_dynamic_module_type_metrics_result;
-
     use super::*;
 
     #[test]
