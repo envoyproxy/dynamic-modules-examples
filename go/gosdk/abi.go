@@ -161,7 +161,7 @@ import (
 	"unsafe"
 )
 
-// https://github.com/envoyproxy/envoy/blob/cae01e7e963f06a77cab20d0ad4b57e6741c0c75/source/extensions/dynamic_modules/abi_version.h
+// https://github.com/envoyproxy/envoy/blob/78fc79f72c883549cd6b29db11e02e6fb74c63d0/source/extensions/dynamic_modules/abi_version.h
 var version = append([]byte("f2712929b605772d35c34d9ac8ccd7e168197a50951e9c96b64e03256bf80265"), 0)
 
 //export envoy_dynamic_module_on_program_init
