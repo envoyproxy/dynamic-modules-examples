@@ -1,3 +1,6 @@
+admin:
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 9901 }
 static_resources:
   listeners:
     - address:
@@ -16,7 +19,8 @@ static_resources:
                       domains:
                         - "*"
                       routes:
-                        - match:
+                        - name: catch_all
+                          match:
                             prefix: "/"
                           route:
                             cluster: httpbin
@@ -36,7 +40,20 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: passthrough
-                  - name: dynamic_modules/conditional_deply
+                  - name: dynamic_modules/metrics
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: rust_module
+                      filter_name: metrics
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          {
+                            "version": "v1.0.0"
+                          }
+                  - name: dynamic_modules/conditional_delay
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
                       "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
