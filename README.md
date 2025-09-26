@@ -89,6 +89,6 @@ If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environmen
 ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
 ```
 
-[af61c6b2101e8c70281b661d2bd726115ae1da2d]: https://github.com/envoyproxy/envoy/tree/af61c6b2101e8c70281b661d2bd726115ae1da2d
+[78fc79f72c883549cd6b29db11e02e6fb74c63d0]: https://github.com/envoyproxy/envoy/tree/78fc79f72c883549cd6b29db11e02e6fb74c63d0
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
