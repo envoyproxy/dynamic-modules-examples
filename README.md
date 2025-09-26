@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: [af61c6b2101e8c70281b661d2bd726115ae1da2d] v1.36-dev
+> Envoy Version: [78fc79f72c883549cd6b29db11e02e6fb74c63d0] v1.36-dev
 >
 > Since dynamic modules are tied with a specific Envoy version, this repository is based on the specific commit of Envoy.
 > For examples for a specific Envoy version, please check out `release/v<version>` branches:
@@ -89,6 +89,6 @@ If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environmen
 ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
 ```
 
-[af61c6b2101e8c70281b661d2bd726115ae1da2d]: https://github.com/envoyproxy/envoy/tree/af61c6b2101e8c70281b661d2bd726115ae1da2d
+[78fc79f72c883549cd6b29db11e02e6fb74c63d0]: https://github.com/envoyproxy/envoy/tree/78fc79f72c883549cd6b29db11e02e6fb74c63d0
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules
