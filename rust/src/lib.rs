@@ -2,6 +2,7 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 
 mod http_access_logger;
 mod http_header_mutation;
+mod http_metrics;
 mod http_passthrough;
 mod http_random_auth;
 mod http_zero_copy_regex_waf;
@@ -29,7 +30,7 @@ fn init() -> bool {
 ///
 /// Returns None if the filter name or config is determined to be invalid by each filter's `new` function.
 fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
-    _envoy_filter_config: &mut EC,
+    envoy_filter_config: &mut EC,
     filter_name: &str,
     filter_config: &[u8],
 ) -> Option<Box<dyn HttpFilterConfig<EHF>>> {
@@ -43,6 +44,10 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         "header_mutation" => http_header_mutation::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
+        "metrics" => Some(Box::new(http_metrics::FilterConfig::new(
+            filter_config,
+            envoy_filter_config,
+        ))),
         _ => panic!("Unknown filter name: {filter_name}"),
     }
 }
