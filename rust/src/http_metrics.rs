@@ -6,8 +6,13 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 ///
 /// The trait corresponds to a Envoy filter chain configuration.
 pub struct FilterConfig {
-    _filter_config: String,
+    config: Config,
     route_latency: EnvoyHistogramVecId,
+}
+
+#[derive(serde::Deserialize)]
+pub struct Config {
+    version: String,
 }
 
 impl FilterConfig {
@@ -18,16 +23,16 @@ impl FilterConfig {
     pub fn new<EC: EnvoyHttpFilterConfig>(
         filter_config: &str,
         envoy_filter_config: &mut EC,
-    ) -> Self {
-        Self {
-            _filter_config: filter_config.to_string(),
+    ) -> Option<Self> {
+        Some(Self {
+            config: serde_json::from_str::<Config>(filter_config).ok()?,
             // Handles to metrics such as counters, gauges, and histograms are allocated at filter config creation time. These handles
             // are opaque ids that can be used to record statistics during the lifecycle of the filter. These handles last until the
             // filter config is destroyed.
             route_latency: envoy_filter_config
-                .define_histogram_vec("route_latency_ms", &["route_name"])
+                .define_histogram_vec("route_latency_ms", &["version", "route_name"])
                 .unwrap(),
-        }
+        })
     }
 }
 
@@ -35,6 +40,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilterConfig<EHF> for FilterConfig {
     /// This is called for each new HTTP filter.
     fn new_http_filter(&mut self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
         Box::new(Filter {
+            version: self.config.version.clone(),
             start_time: None,
             route_name: None,
             route_latency: self.route_latency,
@@ -46,6 +52,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilterConfig<EHF> for FilterConfig {
 ///
 /// This is a metrics filter that records per-route metrics of the request.
 pub struct Filter {
+    version: String,
     start_time: Option<Instant>,
     route_latency: EnvoyHistogramVecId,
     route_name: Option<String>,
@@ -63,7 +70,7 @@ impl Filter {
         envoy_filter
             .record_histogram_value_vec(
                 self.route_latency,
-                &[&route_name],
+                &[&self.version, &route_name],
                 start_time.elapsed().as_millis() as u64,
             )
             .unwrap();

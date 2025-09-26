@@ -47,6 +47,12 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: metrics
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          {
+                            "version": "v1.0.0"
+                          }
                   - name: dynamic_modules/conditional_delay
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
