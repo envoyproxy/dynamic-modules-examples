@@ -20,6 +20,8 @@ func newHttpFilterConfig(name string, config []byte) gosdk.HttpFilterConfig {
 		return headerAuthFilterConfig{authHeaderName: string(config)}
 	case "delay":
 		return delayFilterConfig{}
+	case "javascript":
+		return newJavaScriptFilterConfig(string(config))
 	default:
 		panic("unknown filter: " + name)
 	}
