@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -12,11 +13,12 @@ import (
 
 const (
 	javaScriptExportedSymbolOnConfig          = "OnConfigure"
-	javaScriptExportedSymbolOnRequestHeaders  = "onRequestHeaders"
-	javaScriptExportedSymbolOnResponseHeaders = "onResponseHeaders"
-)
+	javaScriptExportedSymbolOnRequestHeaders  = "OnRequestHeaders"
+	javaScriptExportedSymbolOnResponseHeaders = "OnResponseHeaders"
 
-const numberOfVMPool = 126
+	functionDeclTemplate = `globalThis.%[1]s = %[1]s`
+	numberOfVMPool       = 24
+)
 
 type (
 	// javaScriptFilterConfig implements [gosdk.HttpFilterConfig].
@@ -39,7 +41,15 @@ type (
 
 func newJavaScriptFilterConfig(script string) gosdk.HttpFilterConfig {
 	c := &javaScriptFilterConfig{}
-	for i := 0; i < numberOfVMPool; i++ {
+
+	script = strings.Join([]string{
+		script,
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnConfig),
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnRequestHeaders),
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnResponseHeaders),
+	}, "\n")
+
+	for i := range numberOfVMPool {
 		vm, err := newJavaScriptVM(script)
 		if err != nil {
 			log.Printf("failed to create JavaScript VM: %v", err)
@@ -74,7 +84,7 @@ func newJavaScriptVM(script string) (*javaScriptVM, error) {
 	}
 
 	// Call OnConfigure.
-	onConfigure, ok := goja.AssertFunction(vm.Get(javaScriptExportedSymbolOnConfig))
+	onConfigure, ok := goja.AssertFunction(vm.GlobalObject().Get(javaScriptExportedSymbolOnConfig))
 	if !ok {
 		return nil, fmt.Errorf("failed to get %s function", javaScriptExportedSymbolOnConfig)
 	}
@@ -85,11 +95,11 @@ func newJavaScriptVM(script string) (*javaScriptVM, error) {
 
 	ret := &javaScriptVM{Runtime: vm}
 	// Check two exported functions.
-	ret.onRequestHeaders, ok = goja.AssertFunction(vm.Get(javaScriptExportedSymbolOnRequestHeaders))
+	ret.onRequestHeaders, ok = goja.AssertFunction(vm.GlobalObject().Get(javaScriptExportedSymbolOnRequestHeaders))
 	if !ok {
 		return nil, fmt.Errorf("failed to get %s function", javaScriptExportedSymbolOnRequestHeaders)
 	}
-	ret.onResponseHeaders, ok = goja.AssertFunction(vm.Get(javaScriptExportedSymbolOnResponseHeaders))
+	ret.onResponseHeaders, ok = goja.AssertFunction(vm.GlobalObject().Get(javaScriptExportedSymbolOnResponseHeaders))
 	if !ok {
 		return nil, fmt.Errorf("failed to get %s function", javaScriptExportedSymbolOnResponseHeaders)
 	}

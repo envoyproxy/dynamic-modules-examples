@@ -25,6 +25,35 @@ static_resources:
                           route:
                             cluster: httpbin
                 http_filters:
+                  - name: dynamic_modules/passthrough/javascript
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: go_module
+                        do_not_close: true
+                      filter_name: javascript
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          /// Called with String argument passed from the host.
+                          function OnConfigure () {
+                              console.log("OnConfigure called");
+                          }
+                          /// Called when a request header is received. `ctx` object has the following properties:
+                          ///
+                          /// - `getHeader(name: String): String`: Function to get a header value.
+                          /// - `setHeader(name: String, value: String): void`: Function to set a header value.
+                          function OnRequestHeaders(ctx) {
+                              console.log("OnRequestHeader called");
+                          }
+                          /// Called when a response header is received. `ctx` object has the following properties:
+                          ///
+                          /// - `getHeader(name: String): String`: Function to get a header value.
+                          /// - `setHeader(name: String, value: String): void`: Function to set a header value.
+                          function OnResponseHeaders(ctx) {
+                              console.log("OnResponseHeader called");
+                          }
                   - name: dynamic_modules/passthrough
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
