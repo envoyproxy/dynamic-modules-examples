@@ -66,6 +66,7 @@ func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {
 		return goja.Undefined()
 	})
 	if err != nil {
+		return nil, fmt.Errorf("failed to set console.log: %w", err)
 	}
 	err = vm.Set("console", console)
 	if err != nil {
