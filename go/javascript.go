@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 	"sync"
 
@@ -39,18 +41,12 @@ type (
 	}
 )
 
-func newJavaScriptFilterConfig(script string) gosdk.HttpFilterConfig {
+func newJavaScriptFilterConfig(userCode string) gosdk.HttpFilterConfig {
 	c := &javaScriptFilterConfig{}
 
-	script = strings.Join([]string{
-		script,
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnConfig),
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnRequestHeaders),
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnResponseHeaders),
-	}, "\n")
-
+	script := completeJavaScriptCode(userCode)
 	for i := range numberOfVMPool {
-		vm, err := newJavaScriptVM(script)
+		vm, err := newJavaScriptVM(script, os.Stdout)
 		if err != nil {
 			log.Printf("failed to create JavaScript VM: %v", err)
 			return nil
@@ -60,7 +56,16 @@ func newJavaScriptFilterConfig(script string) gosdk.HttpFilterConfig {
 	return c
 }
 
-func newJavaScriptVM(script string) (*javaScriptVM, error) {
+func completeJavaScriptCode(userCode string) string {
+	return strings.Join([]string{
+		userCode,
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnConfig),
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnRequestHeaders),
+		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnResponseHeaders),
+	}, "\n")
+}
+
+func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {
 	vm := goja.New()
 	console := vm.NewObject()
 	err := console.Set("log", func(call goja.FunctionCall) goja.Value {
@@ -68,7 +73,7 @@ func newJavaScriptVM(script string) (*javaScriptVM, error) {
 		for _, a := range call.Arguments {
 			args = append(args, a.Export())
 		}
-		fmt.Println(args...)
+		_, _ = fmt.Fprint(w, args...)
 		return goja.Undefined()
 	})
 	if err != nil {
@@ -183,6 +188,10 @@ func (p *javaScriptFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, _ bool) gosd
 		e.SetResponseHeader(key, []byte(value))
 		return goja.Undefined()
 	})
+	if _, err := vm.onResponseHeaders(goja.Undefined(), obj); err != nil {
+		log.Printf("failed to call %s: %v", javaScriptExportedSymbolOnResponseHeaders, err)
+		return gosdk.ResponseHeadersStatusStopIteration
+	}
 	return gosdk.ResponseHeadersStatusContinue
 }
 
