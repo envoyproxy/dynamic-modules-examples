@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -44,9 +43,8 @@ type (
 func newJavaScriptFilterConfig(userCode string) gosdk.HttpFilterConfig {
 	c := &javaScriptFilterConfig{}
 
-	script := completeJavaScriptCode(userCode)
 	for i := range numberOfVMPool {
-		vm, err := newJavaScriptVM(script, os.Stdout)
+		vm, err := newJavaScriptVM(userCode, os.Stdout)
 		if err != nil {
 			log.Printf("failed to create JavaScript VM: %v", err)
 			return nil
@@ -54,15 +52,6 @@ func newJavaScriptFilterConfig(userCode string) gosdk.HttpFilterConfig {
 		c.vms[i] = vm
 	}
 	return c
-}
-
-func completeJavaScriptCode(userCode string) string {
-	return strings.Join([]string{
-		userCode,
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnConfig),
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnRequestHeaders),
-		fmt.Sprintf(functionDeclTemplate, javaScriptExportedSymbolOnResponseHeaders),
-	}, "\n")
 }
 
 func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {

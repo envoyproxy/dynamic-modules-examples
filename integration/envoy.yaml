@@ -36,23 +36,28 @@ static_resources:
                       filter_config:
                         "@type": "type.googleapis.com/google.protobuf.StringValue"
                         value: |
-                          /// Called with String argument passed from the host.
-                          function OnConfigure () {
-                              console.log("OnConfigure called");
-                          }
+                          /// Called when the filter is configured. This is called once per VM instance.
+                          function OnConfigure () {}
                           /// Called when a request header is received. `ctx` object has the following properties:
                           ///
-                          /// - `getHeader(name: String): String`: Function to get a header value.
-                          /// - `setHeader(name: String, value: String): void`: Function to set a header value.
+                          /// - `getRequestHeader(name: String): String`: Function to get a request header value.
+                          /// - `setRequestHeader(name: String, value: String): void`: Function to set a request header value.
                           function OnRequestHeaders(ctx) {
                               console.log("OnRequestHeader called");
+                              let foo = ctx.getRequestHeader("foo");
+                              ctx.setRequestHeader("x-foo", foo);
                           }
                           /// Called when a response header is received. `ctx` object has the following properties:
                           ///
-                          /// - `getHeader(name: String): String`: Function to get a header value.
-                          /// - `setHeader(name: String, value: String): void`: Function to set a header value.
+                          /// - `getRequestHeader(name: String): String`: Function to get a request header value.
+                          /// - `getResponseHeader(name: String): String`: Function to get a response header value.
+                          /// - `setResponseHeader(name: String, value: String): void`: Function to set a response header value.
                           function OnResponseHeaders(ctx) {
-                              console.log("OnResponseHeader called");
+                              let dog = ctx.getRequestHeader("dog");
+                              ctx.setResponseHeader("x-dog", dog);
+                              let status = ctx.getResponseHeader(":status");
+                              ctx.setResponseHeader("x-status", status);
+                              console.log("Response status: ", status);
                           }
                   - name: dynamic_modules/passthrough
                     typed_config:
