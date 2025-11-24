@@ -3,7 +3,7 @@
 package gosdk
 
 // Following is a distillation of the Envoy ABI for dynamic modules:
-// https://github.com/envoyproxy/envoy/blob/78fc79f72c883549cd6b29db11e02e6fb74c63d0/source/extensions/dynamic_modules/abi.h
+// https://github.com/envoyproxy/envoy/blob/dc2d3098ae5641555f15c71d5bb5ce0060a8015c/source/extensions/dynamic_modules/abi.h
 //
 // Why not using the header file directly? That is because Go runtime complains
 // about passing pointers to C code on the boundary. In the following code, we replace
@@ -161,8 +161,8 @@ import (
 	"unsafe"
 )
 
-// https://github.com/envoyproxy/envoy/blob/78fc79f72c883549cd6b29db11e02e6fb74c63d0/source/extensions/dynamic_modules/abi_version.h
-var version = append([]byte("f2712929b605772d35c34d9ac8ccd7e168197a50951e9c96b64e03256bf80265"), 0)
+// https://github.com/envoyproxy/envoy/blob/dc2d3098ae5641555f15c71d5bb5ce0060a8015c/source/extensions/dynamic_modules/abi_version.h
+var version = append([]byte("ca2be3b80954d2a0e22b41d033b18eff9390c30261c8ec9ffe6e6bf971f41c27"), 0)
 
 //export envoy_dynamic_module_on_program_init
 func envoy_dynamic_module_on_program_init() uintptr {
