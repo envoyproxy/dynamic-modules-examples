@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"cmp"
 	"encoding/json"
 	"io"
@@ -13,6 +14,8 @@ import (
 	"time"
 
 	"github.com/mccutchen/go-httpbin/v2/httpbin"
+	io_prometheus_client "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,8 +38,8 @@ func TestIntegration(t *testing.T) {
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
 	require.NoError(t, os.RemoveAll(accessLogsDir))
-	require.NoError(t, os.Mkdir(accessLogsDir, 0700))
-	require.NoError(t, os.Chmod(accessLogsDir, 0777))
+	require.NoError(t, os.Mkdir(accessLogsDir, 0o700))
+	require.NoError(t, os.Chmod(accessLogsDir, 0o777))
 
 	cmd := exec.Command(
 		"docker",
@@ -327,5 +330,120 @@ func TestIntegration(t *testing.T) {
 				}, 30*time.Second, 200*time.Millisecond)
 			})
 		}
+	})
+
+	t.Run("javascript", func(t *testing.T) {
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1062/headers", nil)
+			require.NoError(t, err)
+			req.Header.Set("dog", "cat")
+			req.Header.Set("foo", "bar")
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+
+			t.Logf("response: headers=%v, body=%s", resp.Header, string(body))
+			require.Equal(t, 200, resp.StatusCode)
+
+			// HttpBin returns a JSON object containing the request headers in this format.
+			type httpBinHeadersBody struct {
+				Headers map[string][]string `json:"headers"`
+			}
+			var headersBody httpBinHeadersBody
+			require.NoError(t, json.Unmarshal(body, &headersBody))
+
+			require.Contains(t, headersBody.Headers["X-Foo"], "bar")
+			require.Contains(t, headersBody.Headers["Foo"], "bar")
+			require.Contains(t, headersBody.Headers["Dog"], "cat")
+
+			// We also need to check that the response headers were mutated.
+			require.Equal(t, "cat", resp.Header.Get("x-dog"))
+			require.Equal(t, "200", resp.Header.Get("x-status"))
+			return true
+		}, 30*time.Second, 200*time.Millisecond)
+	})
+
+	t.Run("http_metrics", func(t *testing.T) {
+		// Send test request
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:1062/uuid", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
+			return resp.StatusCode == 200
+		}, 30*time.Second, 200*time.Millisecond)
+
+		// Check the metrics endpoint
+		lastStatsOutput := ""
+		t.Cleanup(func() {
+			t.Logf("last stats output:\n%s", lastStatsOutput)
+		})
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://localhost:9901/stats/prometheus", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+
+			// Check that the route_latency_ms metric is present
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			lastStatsOutput = string(body)
+
+			decoder := expfmt.NewDecoder(bytes.NewReader(body), expfmt.NewFormat(expfmt.TypeTextPlain))
+			for {
+				var metricFamily io_prometheus_client.MetricFamily
+				err := decoder.Decode(&metricFamily)
+				if err == io.EOF {
+					break
+				}
+				require.NoError(t, err)
+
+				if metricFamily.GetName() != "route_latency_ms" {
+					continue
+				}
+				for _, metric := range metricFamily.GetMetric() {
+					hist := metric.GetHistogram()
+					require.NotNil(t, hist)
+					labels := make(map[string]string)
+					for _, label := range metric.GetLabel() {
+						labels[label.GetName()] = label.GetValue()
+					}
+					require.Equal(t, map[string]string{"version": "v1.0.0", "route_name": "catch_all"}, labels)
+					if hist.GetSampleCount() > 0 {
+						return true
+					}
+				}
+			}
+			t.Logf("route_latency_ms metric not found or no samples yet")
+			return false
+		}, 5*time.Second, 200*time.Millisecond)
 	})
 }

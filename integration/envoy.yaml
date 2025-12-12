@@ -1,3 +1,6 @@
+admin:
+  address:
+    socket_address: { address: 127.0.0.1, port_value: 9901 }
 static_resources:
   listeners:
     - address:
@@ -16,11 +19,46 @@ static_resources:
                       domains:
                         - "*"
                       routes:
-                        - match:
+                        - name: catch_all
+                          match:
                             prefix: "/"
                           route:
                             cluster: httpbin
                 http_filters:
+                  - name: dynamic_modules/passthrough/javascript
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: go_module
+                        do_not_close: true
+                      filter_name: javascript
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          /// Called when the filter is configured. This is called once per VM instance.
+                          function OnConfigure () {}
+                          /// Called when a request header is received. `ctx` object has the following properties:
+                          ///
+                          /// - `getRequestHeader(name: String): String`: Function to get a request header value.
+                          /// - `setRequestHeader(name: String, value: String): void`: Function to set a request header value.
+                          function OnRequestHeaders(ctx) {
+                              console.log("OnRequestHeader called");
+                              let foo = ctx.getRequestHeader("foo");
+                              ctx.setRequestHeader("x-foo", foo);
+                          }
+                          /// Called when a response header is received. `ctx` object has the following properties:
+                          ///
+                          /// - `getRequestHeader(name: String): String`: Function to get a request header value.
+                          /// - `getResponseHeader(name: String): String`: Function to get a response header value.
+                          /// - `setResponseHeader(name: String, value: String): void`: Function to set a response header value.
+                          function OnResponseHeaders(ctx) {
+                              let dog = ctx.getRequestHeader("dog");
+                              ctx.setResponseHeader("x-dog", dog);
+                              let status = ctx.getResponseHeader(":status");
+                              ctx.setResponseHeader("x-status", status);
+                              console.log("Response status: ", status);
+                          }
                   - name: dynamic_modules/passthrough
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
@@ -36,7 +74,20 @@ static_resources:
                       dynamic_module_config:
                         name: rust_module
                       filter_name: passthrough
-                  - name: dynamic_modules/conditional_deply
+                  - name: dynamic_modules/metrics
+                    typed_config:
+                      # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
+                      dynamic_module_config:
+                        name: rust_module
+                      filter_name: metrics
+                      filter_config:
+                        "@type": "type.googleapis.com/google.protobuf.StringValue"
+                        value: |
+                          {
+                            "version": "v1.0.0"
+                          }
+                  - name: dynamic_modules/conditional_delay
                     typed_config:
                       # https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/dynamic_modules/v3/dynamic_modules.proto#envoy-v3-api-msg-extensions-dynamic-modules-v3-dynamicmoduleconfig
                       "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_modules.v3.DynamicModuleFilter
