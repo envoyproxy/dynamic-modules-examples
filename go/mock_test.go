@@ -8,24 +8,25 @@ import (
 
 // mockEnvoyHttpFilter is a mock implementation of [gosdk.EnvoyHttpFilter] for testing.
 type mockEnvoyHttpFilter struct {
-	getRequestHeader   func(key string) (string, bool)
-	getRequestHeaders  func() map[string][]string
-	setRequestHeader   func(key string, value []byte) bool
-	getResponseHeader  func(key string) (string, bool)
-	getResponseHeaders func() map[string][]string
-	setResponseHeader  func(key string, value []byte) bool
-	getRequestBody     func() (io.Reader, bool)
-	drainRequestBody   func(n int) bool
-	appendRequestBody  func(data []byte) bool
-	getResponseBody    func() (io.Reader, bool)
-	drainResponseBody  func(n int) bool
-	appendResponseBody func(data []byte) bool
-	sendLocalReply     func(statusCode uint32, headers [][2]string, body []byte)
-	getSourceAddress   func() string
-	getRequestProtocol func() string
-	newScheduler       func() gosdk.Scheduler
-	continueRequest    func()
-	continueResponse   func()
+	getRequestHeader      func(key string) (string, bool)
+	getRequestHeaders     func() map[string][]string
+	setRequestHeader      func(key string, value []byte) bool
+	getResponseHeader     func(key string) (string, bool)
+	getResponseHeaders    func() map[string][]string
+	setResponseHeader     func(key string, value []byte) bool
+	getRequestBody        func() (io.Reader, bool)
+	drainRequestBody      func(n int) bool
+	appendRequestBody     func(data []byte) bool
+	getResponseBody       func() (io.Reader, bool)
+	drainResponseBody     func(n int) bool
+	appendResponseBody    func(data []byte) bool
+	sendLocalReply        func(statusCode uint32, headers [][2]string, body []byte)
+	getSourceAddress      func() string
+	getDestinationAddress func() string
+	getRequestProtocol    func() string
+	newScheduler          func() gosdk.Scheduler
+	continueRequest       func()
+	continueResponse      func()
 }
 
 // GetRequestHeader implements [gosdk.EnvoyHttpFilter.GetRequestHeader].
@@ -96,6 +97,11 @@ func (m mockEnvoyHttpFilter) SendLocalReply(statusCode uint32, headers [][2]stri
 // GetSourceAddress implements [gosdk.EnvoyHttpFilter.GetSourceAddress].
 func (m mockEnvoyHttpFilter) GetSourceAddress() string {
 	return m.getSourceAddress()
+}
+
+// GetDestinationAddress implements [gosdk.EnvoyHttpFilter.GetDestinationAddress].
+func (m mockEnvoyHttpFilter) GetDestinationAddress() string {
+	return m.getDestinationAddress()
 }
 
 // GetRequestProtocol implements [gosdk.EnvoyHttpFilter.GetRequestProtocol].

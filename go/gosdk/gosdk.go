@@ -59,6 +59,9 @@ type EnvoyHttpFilter interface {
 	// GetSourceAddress gets the source address of the request in the format of "IP:PORT".
 	// This corresponds to `source.address` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
 	GetSourceAddress() string
+	// GetDestinationAddress gets the destination address of the request in the format of "IP:PORT".
+	// This corresponds to `destination.address` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
+	GetDestinationAddress() string
 	// GetRequestProtocol gets the request protocol. This corresponds to `request.protocol` attribute https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes.
 	GetRequestProtocol() string
 	// NewScheduler creates a new Scheduler that can be used to schedule events to the correct Envoy worker thread.

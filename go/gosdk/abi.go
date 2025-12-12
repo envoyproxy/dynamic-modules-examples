@@ -298,7 +298,8 @@ func envoy_dynamic_module_on_http_filter_http_callout_done(
 func envoy_dynamic_module_on_http_filter_scheduled(
 	filterEnvoyPtr uintptr,
 	filterModulePtr uintptr,
-	eventID C.uint64_t) {
+	eventID C.uint64_t,
+) {
 	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
 	// Call the Scheduled method of the filter.
 	pinned.obj.Scheduled(envoyFilter{raw: uintptr(filterEnvoyPtr)}, uint64(eventID))
@@ -467,6 +468,12 @@ func (e envoyFilter) GetRequestProtocol() string {
 func (e envoyFilter) GetSourceAddress() string {
 	// https://github.com/envoyproxy/envoy/blob/05223ee2cd143d70b32402783c2a866a9dd18bd1/source/extensions/dynamic_modules/abi.h#L237-L372
 	return e.getStringAttribute(24) // source.address
+}
+
+// GetDestinationAddress implements [EnvoyHttpFilter].
+func (e envoyFilter) GetDestinationAddress() string {
+	// https://github.com/envoyproxy/envoy/blob/05223ee2cd143d70b32402783c2a866a9dd18bd1/source/extensions/dynamic_modules/abi.h#L237-L372
+	return e.getStringAttribute(26) // destination.address
 }
 
 func (e envoyFilter) getStringAttribute(id int) string {
