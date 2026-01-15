@@ -7,12 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  go:
+  build_and_unit_test:
     name: Build and Unit Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
-    defaults:
-      run:
-        working-directory: ./go
     strategy:
       fail-fast: false
       matrix:
