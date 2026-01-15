@@ -89,7 +89,8 @@ func TestIntegration(t *testing.T) {
 		require.NoError(t, cmd.Start())
 		t.Cleanup(func() {
 			cancel()
-			require.NoError(t, cmd.Process.Signal(os.Interrupt))
+			time.Sleep(3 * time.Second)
+			require.NoError(t, cmd.Process.Signal(os.Kill))
 		})
 	}
 

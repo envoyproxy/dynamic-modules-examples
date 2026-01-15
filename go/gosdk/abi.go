@@ -292,6 +292,9 @@ func envoy_dynamic_module_on_http_filter_scheduled(
 	filterModulePtr uintptr,
 	eventID uint64,
 ) {
+	pinned := unwrapPinnedHttpFilter(uintptr(filterModulePtr))
+	// Call the Scheduled method of the filter.
+	pinned.obj.Scheduled(envoyFilter{raw: uintptr(filterEnvoyPtr)}, uint64(eventID))
 }
 
 //export envoy_dynamic_module_on_http_filter_http_stream_reset

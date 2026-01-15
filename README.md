@@ -30,9 +30,12 @@ The tracking issue for dynamic modules in general is [here](https://github.com/e
 ## Development
 
 ```
-make test # Run all unit tests
-make build # Build all dynamic modules
-make integration-test # Run integration tests with Envoy
+# Run all unit tests
+make test
+# Build all dynamic modules
+make build
+# Run integration tests with Envoy
+make integration-test
 ```
 
 [Envoy]: https://github.com/envoyproxy/envoy
