@@ -30,7 +30,7 @@ impl FilterConfig {
 
 impl<EHF: EnvoyHttpFilter> HttpFilterConfig<EHF> for FilterConfig {
     /// This is called for each new HTTP filter.
-    fn new_http_filter(&mut self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
+    fn new_http_filter(&self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
         Box::new(Filter {
             re: self.re.clone(),
         })
@@ -61,7 +61,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
         // [`EnvoyMutBuffer`]s. Each [`EnvoyMutBuffer`] is a mutable buffer that can be
         // used to read the body data.
         let data = envoy_filter
-            .get_request_body()
+            .get_buffered_request_body()
             .expect("Failed to get request body");
         let mut body_reader = BodyReader::new(data);
         let matched = self
@@ -70,7 +70,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
             .expect("Failed to do regex match");
         if matched {
             // If the regex matches, we send a 403 response.
-            envoy_filter.send_response(403, vec![], Some(b"Access forbidden"));
+            envoy_filter.send_response(403, vec![], Some(b"Access forbidden"), None);
             return abi::envoy_dynamic_module_type_on_http_filter_request_body_status::StopIterationNoBuffer;
         }
         abi::envoy_dynamic_module_type_on_http_filter_request_body_status::Continue
@@ -136,7 +136,7 @@ mod tests {
 
         // End of stream and matching regex, so we should send a 403 response.
         envoy_filter
-            .expect_get_request_body()
+            .expect_get_buffered_request_body()
             .returning(|| {
                 static mut HELLO: [u8; 6] = *b"Hello ";
                 static mut WORLD: [u8; 6] = *b"World!";
@@ -148,14 +148,14 @@ mod tests {
             .times(1);
         envoy_filter
             .expect_send_response()
-            .withf(|status, _, _| *status == 403)
-            .returning(|_, _, _| {})
+            .withf(|status, _, _, _| *status == 403)
+            .returning(|_, _, _, _| {})
             .times(1);
         assert_eq!(filter.on_request_body(&mut envoy_filter, true), abi::envoy_dynamic_module_type_on_http_filter_request_body_status::StopIterationNoBuffer);
 
         // End of stream and not matching regex, so we should continue.
         envoy_filter
-            .expect_get_request_body()
+            .expect_get_buffered_request_body()
             .returning(|| {
                 static mut GOOD: [u8; 5] = *b"Good ";
                 static mut MORNING: [u8; 8] = *b"Morning!";

@@ -31,7 +31,7 @@ impl FilterConfig {
 
 impl<EHF: EnvoyHttpFilter> HttpFilterConfig<EHF> for FilterConfig {
     /// This is called for each new HTTP filter.
-    fn new_http_filter(&mut self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
+    fn new_http_filter(&self, _envoy: &mut EHF) -> Box<dyn HttpFilter<EHF>> {
         Box::new(Filter {
             request_headers: self.request_headers.clone(),
             remove_request_headers: self.remove_request_headers.clone(),

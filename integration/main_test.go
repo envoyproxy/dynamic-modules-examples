@@ -51,6 +51,7 @@ func TestIntegration(t *testing.T) {
 		envoyImage,
 		"--concurrency", "1",
 		"--config-path", "/integration/envoy.yaml",
+		"--component-log-level", "dynamic_modules:debug",
 		"--base-id", strconv.Itoa(time.Now().Nanosecond()),
 	)
 	cmd.Stderr = os.Stderr

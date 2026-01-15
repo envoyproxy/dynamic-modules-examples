@@ -102,7 +102,7 @@ func (p passthroughFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, endOfStream 
 			fmt.Printf("gosdk: ResponseHeaders, header: %s: %s\n", k, v)
 		}
 	}
-	return gosdk.ResponseHeadersStatusContinue
+	return gosdk.ResponseHeadersStatusStopIteration
 }
 
 // ResponseBody implements [gosdk.HttpFilter].
