@@ -32,7 +32,7 @@ RUN cp /build/target/x86_64-unknown-linux-gnu/debug/librust_module.so /build/amd
 ##### Build the Go library #####
 
 # We use zig to cross-compile the Go library for both x86_64 and aarch64 architectures.
-FROM --platform=$BUILDPLATFORM golang:1.24.2 AS go_builder
+FROM --platform=$BUILDPLATFORM golang:1.25.6 AS go_builder
 # Install zig.
 ARG ZIG_VERSION=0.14.0
 RUN apt update && apt install -y curl xz-utils
