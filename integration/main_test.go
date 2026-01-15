@@ -35,6 +35,19 @@ func TestIntegration(t *testing.T) {
 	}()
 	t.Cleanup(func() { _ = server.Close() })
 
+	// Health check to ensure the server is up before starting tests.
+	require.Eventually(t, func() bool {
+		resp, err := http.Get("http://localhost:1234/uuid")
+		if err != nil {
+			t.Logf("httpbin server not ready yet: %v", err)
+			return false
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+		return resp.StatusCode == 200
+	}, 10*time.Second, 500*time.Millisecond)
+
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
 	require.NoError(t, os.RemoveAll(accessLogsDir))
