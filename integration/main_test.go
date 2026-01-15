@@ -26,13 +26,20 @@ func TestIntegration(t *testing.T) {
 
 	// Setup the httpbin upstream local server.
 	httpbinHandler := httpbin.New()
-	server := &http.Server{Addr: ":1234", Handler: httpbinHandler}
+	server := &http.Server{Addr: ":1234", Handler: httpbinHandler,
+		ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			t.Logf("HTTP server error: %v", err)
 		}
 	}()
-	t.Cleanup(func() { _ = server.Close() })
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.Shutdown(ctx)
+	}()
 
 	// Health check to ensure the server is up before starting tests.
 	require.Eventually(t, func() bool {
@@ -73,8 +80,7 @@ func TestIntegration(t *testing.T) {
 		t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
 	} else {
 		// Now run Envoy with the env variable set for dynamic modules.
-		ctx, cancel := context.WithCancel(context.Background())
-		cmd := exec.CommandContext(ctx, "go", // nolint: gosec
+		cmd := exec.Command("go", // nolint: gosec
 			"tool", "func-e", "run",
 			"-c", "envoy.yaml",
 			"--log-level", "warn",
@@ -87,11 +93,14 @@ func TestIntegration(t *testing.T) {
 		cmd.Stderr = os.Stderr
 		cmd.Env = append(os.Environ(), "ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd)
 		require.NoError(t, cmd.Start())
-		t.Cleanup(func() {
-			cancel()
+		defer func() {
+			// Send SIGTERM for graceful shutdown
+			if err := cmd.Process.Signal(os.Interrupt); err != nil {
+				t.Logf("failed to interrupt envoy: %v", err)
+			}
 			time.Sleep(3 * time.Second)
-			require.NoError(t, cmd.Process.Signal(os.Kill))
-		})
+			require.NoError(t, cmd.Process.Kill())
+		}()
 	}
 
 	t.Run("http_access_logger", func(t *testing.T) {
@@ -260,13 +269,12 @@ func TestIntegration(t *testing.T) {
 			defer func() {
 				require.NoError(t, resp.Body.Close())
 			}()
-
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
 			if resp.StatusCode != http.StatusUnauthorized {
 				t.Logf("unexpected status code: %d", resp.StatusCode)
 				return false
 			}
-			body, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
 			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
 			require.Contains(t, string(body), "Unauthorized by Go Module")
 			return true
