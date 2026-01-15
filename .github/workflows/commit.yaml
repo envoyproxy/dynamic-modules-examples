@@ -8,7 +8,7 @@ on:
 
 jobs:
   build_and_test:
-    name: Build and Unit Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
+    name: Build and Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
@@ -67,7 +67,7 @@ jobs:
       - run: make integration-test
 
   docker_build_and_integration_test:
-    name: Build and Run Integration Tests
+    name: Integration Test with Docker Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -127,9 +127,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  integration_test_on_main:
+  docker_build_and_integration_test_on_main:
     needs: [docker_build_and_integration_test]
-    name: Integration Test (${{ matrix.platform.arch }})
+    name: Integration Test with Docker Image (${{ matrix.platform.arch }})
     # This will only run on push events to the main branch.
     # Mainly to check the multi-arch image by running the
     # integration tests on both architectures.
