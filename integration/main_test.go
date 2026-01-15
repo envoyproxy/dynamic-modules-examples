@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -20,8 +21,6 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE"), "envoy-with-dynamic-modules:latest")
-
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
@@ -54,23 +53,45 @@ func TestIntegration(t *testing.T) {
 	require.NoError(t, os.Mkdir(accessLogsDir, 0o700))
 	require.NoError(t, os.Chmod(accessLogsDir, 0o777))
 
-	cmd := exec.Command(
-		"docker",
-		"run",
-		"--network", "host",
-		"-v", cwd+":/integration",
-		"-w", "/integration",
-		"--rm",
-		envoyImage,
-		"--concurrency", "1",
-		"--config-path", "/integration/envoy.yaml",
-		"--component-log-level", "dynamic_modules:debug",
-		"--base-id", strconv.Itoa(time.Now().Nanosecond()),
-	)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	require.NoError(t, cmd.Start())
-	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
+	if envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE")); envoyImage != "" {
+		cmd := exec.Command(
+			"docker",
+			"run",
+			"--network", "host",
+			"-v", cwd+":/integration",
+			"-w", "/integration",
+			"--rm",
+			envoyImage,
+			"--concurrency", "1",
+			"--config-path", "/integration/envoy.yaml",
+			"--component-log-level", "dynamic_modules:debug",
+			"--base-id", strconv.Itoa(time.Now().Nanosecond()),
+		)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		require.NoError(t, cmd.Start())
+		t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
+	} else {
+		// Now run Envoy with the env variable set for dynamic modules.
+		ctx, cancel := context.WithCancel(context.Background())
+		cmd := exec.CommandContext(ctx, "go", // nolint: gosec
+			"tool", "func-e", "run",
+			"-c", "envoy.yaml",
+			"--log-level", "warn",
+			"--concurrency", "1",
+			"--component-log-level", "dynamic_modules:debug",
+			"--base-id", strconv.Itoa(time.Now().Nanosecond()),
+		)
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Env = append(os.Environ(), "ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd)
+		require.NoError(t, cmd.Start())
+		t.Cleanup(func() {
+			cancel()
+			require.NoError(t, cmd.Process.Signal(os.Interrupt))
+		})
+	}
 
 	t.Run("http_access_logger", func(t *testing.T) {
 		t.Run("health checking", func(t *testing.T) {

@@ -29,65 +29,10 @@ The tracking issue for dynamic modules in general is [here](https://github.com/e
 
 ## Development
 
-### Rust Dynamic Module
-
-To build and test the modules locally without Envoy, you can use `cargo` to build them just like any other Rust project:
-
 ```
-cd rust
-cargo build
-cargo test
-cargo clippy -- -D warnings
-cargo fmt --all -- --check
-```
-
-### Go Dynamic Module
-To build and test the modules locally without Envoy, you can use `go` to build them just like any other Go project:
-
-```
-cd go
-go test ./... -v
-go build -buildmode=c-shared -o libgo_module.so .
-go tool golangci-lint run
-find . -type f -name '*.go' | xargs go tool gofumpt -l -w
-```
-
-### Build Envoy + Example Dynamic Module Docker Image
-
-To build the example modules and bundle them with Envoy, simply run
-
-```
-docker buildx build . -t envoy-with-dynamic-modules:latest [--platform linux/amd64,linux/arm64]
-```
-
-where `--platform` is optional and can be used to build for multiple platforms.
-
-### Run Envoy + Example Dynamic Module Docker Image
-
-The example Envoy configuration yaml is in [`integration/envoy.yaml`](integration/envoy.yaml) which is also used
-to run the integration tests. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run Envoy with the following command:
-
-```
-docker run --network host -v $(pwd):/examples -w /examples/integration envoy-with-dynamic-modules:latest --config-path ./envoy.yaml
-```
-
-Then execute, for example, the following command to test the passthrough and access log filters:
-
-```
-curl localhost:1062/uuid
-```
-
-### Run integration tests with the built example Envoy + Dynamic Module Docker Image.
-
-The integration tests are in the `integration` directory. Assuming you built the Docker image with the tag `envoy-with-dynamic-modules:latest`, you can run the integration tests with the following command:
-```
-cd integration
-go test . -v -count=1
-```
-
-If you want to explicitly specify the docker image, use `ENVOY_IMAGE` environment variable:
-```
-ENVOY_IMAGE=foo-bar-image:latest go test . -v -count=1
+make test # Run all unit tests
+make build # Build all dynamic modules
+make integration-test # Run integration tests with Envoy
 ```
 
 [6d9bb7d9a85d616b220d1f8fe67b61f82bbdb8d3]: https://github.com/envoyproxy/envoy/tree/6d9bb7d9a85d616b220d1f8fe67b61f82bbdb8d3

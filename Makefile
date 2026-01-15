@@ -28,6 +28,12 @@ precommit: precommit-go precommit-rust
 
 .PHONY: precommit-go
 precommit-go: ## This runs the linter, formatter, and tidy on the Go codebase.
+	@$(call print_task,Tidying Go modules)
+	@find . -name "go.mod" \
+	| grep go.mod \
+	| xargs -I {} bash -c 'dirname {}' \
+	| xargs -I {} bash -c 'cd {} && $(call print_subtask,Tidying {}) && go mod tidy -v;'
+	@$(call print_success,Tidying completed)
 	@$(call print_task,Running linter)
 	@$(call print_subtask,Checking ./...)
 	@cd go && go tool golangci-lint run --build-tags==cgo ./...
@@ -40,12 +46,6 @@ precommit-go: ## This runs the linter, formatter, and tidy on the Go codebase.
 	@$(call print_subtask,Running gci)
 	@cd go && go tool gci write -s standard -s default -s "prefix(github.com/envoyproxy/dynamic-modules-examples)" `find . -name '*.go'`
 	@$(call print_success,Formatting completed)
-	@$(call print_task,Tidying Go modules)
-	@find . -name "go.mod" \
-	| grep go.mod \
-	| xargs -I {} bash -c 'dirname {}' \
-	| xargs -I {} bash -c 'cd {} && $(call print_subtask,Tidying {}) && go mod tidy -v;'
-	@$(call print_success,Tidying completed)
 
 .PHONY: precommt-rust
 precommit-rust: ## This runs the linter, formatter, and tidy on the Rust codebase.
@@ -89,9 +89,19 @@ build-go: ## Build the Go dynamic module.
 	@$(call print_task,Building Go dynamic module)
 	@cd go && go build -buildmode=c-shared -o libgo_module.so .
 	@$(call print_success,Go dynamic module built at go/libgo_module.so)
+	@$(call print_task,Copying Go dynamic module for easier use with Envoy)
+	@cp go/libgo_module.so integration/libgo_module.so
 
 .PHONY: build-rust
 build-rust: ## Build the Rust dynamic module.
 	@$(call print_task,Building Rust dynamic module)
 	@cd rust && cargo build
 	@$(call print_success,Rust dynamic module built at rust/target/debug/librust_module.so)
+	@$(call print_task,Copying Rust dynamic module for easier use with Envoy)
+	@cp rust/target/debug/librust_module.dylib integration/librust_module.so
+
+.PHONY: integration-test
+integration-test: build-go build-rust ## Run the integration tests.
+	@$(call print_task,Running integration tests)
+	@cd integration && go test -v ./...
+	@$(call print_success,Integration tests completed)

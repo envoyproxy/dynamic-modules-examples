@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build_and_unit_test:
+  build_and_test:
     name: Build and Unit Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
     strategy:
@@ -64,6 +64,7 @@ jobs:
       - run: make check
       - run: make test
       - run: make build
+      - run: make integration-test
 
   docker_build_and_integration_test:
     name: Build and Run Integration Tests
