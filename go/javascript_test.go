@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/envoyproxy/dynamic-modules-examples/go/gosdk"
 	"github.com/stretchr/testify/require"
+
+	"github.com/envoyproxy/dynamic-modules-examples/go/gosdk"
 )
 
 func Test_newJavaScriptFilterConfig(t *testing.T) {

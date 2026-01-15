@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -20,20 +21,38 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE"), "envoy-with-dynamic-modules:latest")
-
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
 
 	// Setup the httpbin upstream local server.
 	httpbinHandler := httpbin.New()
-	server := &http.Server{Addr: ":1234", Handler: httpbinHandler}
+	server := &http.Server{Addr: ":1234", Handler: httpbinHandler,
+		ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			t.Logf("HTTP server error: %v", err)
 		}
 	}()
-	t.Cleanup(func() { _ = server.Close() })
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.Shutdown(ctx)
+	}()
+
+	// Health check to ensure the server is up before starting tests.
+	require.Eventually(t, func() bool {
+		resp, err := http.Get("http://localhost:1234/uuid")
+		if err != nil {
+			t.Logf("httpbin server not ready yet: %v", err)
+			return false
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+		return resp.StatusCode == 200
+	}, 10*time.Second, 500*time.Millisecond)
 
 	// Create a directory for the access logs to be written to.
 	accessLogsDir := cwd + "/access_logs"
@@ -41,22 +60,48 @@ func TestIntegration(t *testing.T) {
 	require.NoError(t, os.Mkdir(accessLogsDir, 0o700))
 	require.NoError(t, os.Chmod(accessLogsDir, 0o777))
 
-	cmd := exec.Command(
-		"docker",
-		"run",
-		"--network", "host",
-		"-v", cwd+":/integration",
-		"-w", "/integration",
-		"--rm",
-		envoyImage,
-		"--concurrency", "1",
-		"--config-path", "/integration/envoy.yaml",
-		"--base-id", strconv.Itoa(time.Now().Nanosecond()),
-	)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	require.NoError(t, cmd.Start())
-	t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
+	if envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE")); envoyImage != "" {
+		cmd := exec.Command(
+			"docker",
+			"run",
+			"--network", "host",
+			"-v", cwd+":/integration",
+			"-w", "/integration",
+			"--rm",
+			envoyImage,
+			"--concurrency", "1",
+			"--config-path", "/integration/envoy.yaml",
+			"--component-log-level", "dynamic_modules:debug",
+			"--base-id", strconv.Itoa(time.Now().Nanosecond()),
+		)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		require.NoError(t, cmd.Start())
+		t.Cleanup(func() { require.NoError(t, cmd.Process.Signal(os.Interrupt)) })
+	} else {
+		// Now run Envoy with the env variable set for dynamic modules.
+		cmd := exec.Command("go", // nolint: gosec
+			"tool", "func-e", "run",
+			"-c", "envoy.yaml",
+			"--log-level", "warn",
+			"--concurrency", "1",
+			"--component-log-level", "dynamic_modules:debug",
+			"--base-id", strconv.Itoa(time.Now().Nanosecond()),
+		)
+
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Env = append(os.Environ(), "ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd)
+		require.NoError(t, cmd.Start())
+		defer func() {
+			// Send SIGTERM for graceful shutdown
+			if err := cmd.Process.Signal(os.Interrupt); err != nil {
+				t.Logf("failed to interrupt envoy: %v", err)
+			}
+			time.Sleep(3 * time.Second)
+			require.NoError(t, cmd.Process.Kill())
+		}()
+	}
 
 	t.Run("http_access_logger", func(t *testing.T) {
 		t.Run("health checking", func(t *testing.T) {
@@ -224,13 +269,12 @@ func TestIntegration(t *testing.T) {
 			defer func() {
 				require.NoError(t, resp.Body.Close())
 			}()
-
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
 			if resp.StatusCode != http.StatusUnauthorized {
 				t.Logf("unexpected status code: %d", resp.StatusCode)
 				return false
 			}
-			body, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
 			t.Logf("response: status=%d body=%s", resp.StatusCode, string(body))
 			require.Contains(t, string(body), "Unauthorized by Go Module")
 			return true
