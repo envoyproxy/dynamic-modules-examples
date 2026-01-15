@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
+
 	"github.com/envoyproxy/dynamic-modules-examples/go/gosdk"
 )
 

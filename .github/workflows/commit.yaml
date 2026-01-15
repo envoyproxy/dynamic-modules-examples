@@ -7,64 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  rust:
-    name: Rust Build and Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
-    runs-on: ${{ matrix.platform.os }}
-    defaults:
-      run:
-        working-directory: ./rust
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - os: ubuntu-22.04
-            arch: amd64
-          - os: ubuntu-22.04-arm
-            arch: arm64
-          - os: macos-latest
-            arch: arm64
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ matrix.platform.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.platform.os }}-cargo-registry-
-
-      - name: Cache Cargo git index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ matrix.platform.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.platform.os }}-cargo-git-
-
-      - name: Set up Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          components: clippy, rustfmt
-
-      - name: Check formatting
-        run: cargo fmt -- --check
-
-      - name: Run Clippy linter
-        run: cargo clippy -- -D warnings
-
-      - name: Build project
-        run: cargo build --verbose
-
-      - name: Run tests
-        run: cargo test --verbose
-
   go:
-    name: Go Build and Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
+    name: Build and Unit Test (${{ matrix.platform.arch }}, ${{ matrix.platform.os }})
     runs-on: ${{ matrix.platform.os }}
     defaults:
       run:
@@ -97,9 +41,32 @@ jobs:
             ~/go/bin
           key: go-test-${{ hashFiles('**/go.mod', '**/go.sum') }}
 
-      - run: CGO_ENABLED=0 go test ./... -v
-      - run: go build -buildmode=c-shared -o main.so
-      - run: go tool golangci-lint run
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ matrix.platform.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.os }}-cargo-registry-
+
+      - name: Cache Cargo git index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ matrix.platform.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform.os }}-cargo-git-
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - run: make check
+      - run: make test
+      - run: make build
 
   docker_build_and_integration_test:
     name: Build and Run Integration Tests
