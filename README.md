@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: [6d9bb7d9a85d616b220d1f8fe67b61f82bbdb8d3] v1.37.0
+> Envoy Version: v1.37.0
 >
 > Since dynamic modules are tied with a specific Envoy version, this repository is based on the specific commit of Envoy.
 > For examples for a specific Envoy version, please check out `release/v<version>` branches:
@@ -35,6 +35,5 @@ make build # Build all dynamic modules
 make integration-test # Run integration tests with Envoy
 ```
 
-[6d9bb7d9a85d616b220d1f8fe67b61f82bbdb8d3]: https://github.com/envoyproxy/envoy/tree/6d9bb7d9a85d616b220d1f8fe67b61f82bbdb8d3
 [Envoy]: https://github.com/envoyproxy/envoy
 [High Level Doc]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules

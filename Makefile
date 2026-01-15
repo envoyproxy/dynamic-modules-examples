@@ -72,12 +72,12 @@ check: precommit ## Run all necessary steps to prepare for a commit and check fo
 test: test-rust test-rust ## Run all tests for the codebase.
 .PHONY: test-go
 test-go:## Run the unit tests for the Go codebase. This doesn't run the integration tests like test-* targets.
-	@$(call print_task,Building and Running Go)
+	@$(call print_task,Running Go tests)
 	@cd go && go test -v ./...
 	@$(call print_success,Go unit tests completed)
 .PHONY: test-rust
 test-rust: ## Run the unit tests for the Rust codebase.
-	@$(call print_task,Building and Running Rust)
+	@$(call print_task,Running Rust tests)
 	@cd rust && cargo test
 	@$(call print_success,Rust unit tests completed)
 
@@ -98,7 +98,8 @@ build-rust: ## Build the Rust dynamic module.
 	@cd rust && cargo build
 	@$(call print_success,Rust dynamic module built at rust/target/debug/librust_module.so)
 	@$(call print_task,Copying Rust dynamic module for easier use with Envoy)
-	@cp rust/target/debug/librust_module.dylib integration/librust_module.so
+	@cp rust/target/debug/librust_module.dylib integration/librust_module.so || true
+	@cp rust/target/debug/librust_module.so integration/librust_module.so || true
 
 .PHONY: integration-test
 integration-test: build-go build-rust ## Run the integration tests.
