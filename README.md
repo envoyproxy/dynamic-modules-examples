@@ -34,7 +34,7 @@ The tracking issue for dynamic modules in general is [here](https://github.com/e
 make test
 # Build all dynamic modules
 make build
-# Run integration tests with Envoy
+# Run integration tests with Envoy via func-e (no local installation required)
 make integration-test
 ```
 
