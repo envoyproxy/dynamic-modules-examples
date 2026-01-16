@@ -126,7 +126,7 @@ mod tests {
     #[test]
     /// This demonstrates how to write a test without Envoy using a mock provided by the SDK.
     fn test_filter() {
-        let mut filter_config = FilterConfig::new("Hello [Ww].+").unwrap();
+        let filter_config = FilterConfig::new("Hello [Ww].+").unwrap();
         let mut envoy_filter = MockEnvoyHttpFilter::new();
         let mut filter: Box<dyn HttpFilter<MockEnvoyHttpFilter>> =
             filter_config.new_http_filter(&mut envoy_filter);

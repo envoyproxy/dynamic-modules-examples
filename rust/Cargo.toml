@@ -1,4 +1,3 @@
-
 [package]
 name = "envoy-proxy-dynamic-modules-rust-sdk-examples"
 version = "0.1.0"
@@ -20,4 +19,4 @@ tempfile = "3.16.0"
 [lib]
 name = "rust_module"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
