@@ -3,63 +3,55 @@ package main
 import (
 	"net/http"
 
-	"github.com/envoyproxy/dynamic-modules-examples/go/gosdk"
+	"github.com/envoyproxy/envoy/source/extensions/dynamic_modules/sdk/go/shared"
 )
 
 type (
-	// headerAuthFilterConfig implements [gosdk.HttpFilterConfig].
+	// headerAuthFilterConfigFactory implements [shared.HttpFilterConfigFactory].
+	headerAuthFilterConfigFactory struct {
+		shared.EmptyHttpFilterConfigFactory
+	}
+	// headerAuthFilterFactory implements [shared.HttpFilterFactory].
 	//
 	// This filter checks if the request header `authHeaderName` is present.
-	headerAuthFilterConfig struct {
+	headerAuthFilterFactory struct {
 		authHeaderName string
 	}
-	// headerAuthFilter implements [gosdk.HttpFilter].
+	// headerAuthFilter implements [shared.HttpFilter].
 	headerAuthFilter struct {
+		handle                    shared.HttpFilterHandle
 		authHeaderName            string
 		sendOnResponseHeaderPhase bool
+		shared.EmptyHttpFilter
 	}
 )
 
-// Destroy implements [gosdk.HttpFilterConfig].
-func (p headerAuthFilterConfig) Destroy() {}
-
-// NewFilter implements [gosdk.HttpFilterConfig].
-func (p headerAuthFilterConfig) NewFilter() gosdk.HttpFilter {
-	return &headerAuthFilter{authHeaderName: p.authHeaderName}
+// Create implements [shared.HttpFilterConfigFactory].
+func (p *headerAuthFilterConfigFactory) Create(handle shared.HttpFilterConfigHandle, unparsedConfig []byte) (shared.HttpFilterFactory, error) {
+	return &headerAuthFilterFactory{authHeaderName: string(unparsedConfig)}, nil
 }
 
-// Scheduled implements gosdk.HttpFilter.
-func (p headerAuthFilter) Scheduled(gosdk.EnvoyHttpFilter, uint64) {}
+// Create implements [shared.HttpFilterFactory].
+func (p *headerAuthFilterFactory) Create(handle shared.HttpFilterHandle) shared.HttpFilter {
+	return &headerAuthFilter{handle: handle, authHeaderName: p.authHeaderName}
+}
 
-// Destroy implements [gosdk.HttpFilter].
-func (p *headerAuthFilter) Destroy() {}
-
-// RequestHeaders implements [gosdk.HttpFilter].
-func (p *headerAuthFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, endOfStream bool) gosdk.RequestHeadersStatus {
-	v, ok := e.GetRequestHeader(p.authHeaderName)
-	if !ok {
-		e.SendLocalReply(http.StatusUnauthorized, [][2]string{{"Content-Type", "text/plain"}}, []byte("Unauthorized by Go Module at on_request_headers\n"))
-		return gosdk.RequestHeadersStatusStopIteration
+// OnRequestHeaders implements [shared.HttpFilter].
+func (p *headerAuthFilter) OnRequestHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
+	v := headers.GetOne(p.authHeaderName)
+	if v == "" {
+		p.handle.SendLocalResponse(http.StatusUnauthorized, [][2]string{{"Content-Type", "text/plain"}}, []byte("Unauthorized by Go Module at on_request_headers\n"), "unauthorized")
+		return shared.HeadersStatusStop
 	}
 	p.sendOnResponseHeaderPhase = v == "on_response_headers"
-	return gosdk.RequestHeadersStatusContinue
+	return shared.HeadersStatusContinue
 }
 
-// RequestBody implements [gosdk.HttpFilter].
-func (p *headerAuthFilter) RequestBody(e gosdk.EnvoyHttpFilter, endOfStream bool) gosdk.RequestBodyStatus {
-	return gosdk.RequestBodyStatusContinue
-}
-
-// ResponseHeaders implements [gosdk.HttpFilter].
-func (p *headerAuthFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, endOfStream bool) gosdk.ResponseHeadersStatus {
+// OnResponseHeaders implements [shared.HttpFilter].
+func (p *headerAuthFilter) OnResponseHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
 	if p.sendOnResponseHeaderPhase {
-		e.SendLocalReply(http.StatusUnauthorized, [][2]string{{"Content-Type", "text/plain"}}, []byte("Unauthorized by Go Module at on_response_headers\n"))
-		return gosdk.ResponseHeadersStatusStopIteration
+		p.handle.SendLocalResponse(http.StatusUnauthorized, [][2]string{{"Content-Type", "text/plain"}}, []byte("Unauthorized by Go Module at on_response_headers\n"), "unauthorized")
+		return shared.HeadersStatusStop
 	}
-	return gosdk.ResponseHeadersStatusContinue
-}
-
-// ResponseBody implements [gosdk.HttpFilter].
-func (p *headerAuthFilter) ResponseBody(e gosdk.EnvoyHttpFilter, endOfStream bool) gosdk.ResponseBodyStatus {
-	return gosdk.ResponseBodyStatusContinue
+	return shared.HeadersStatusContinue
 }

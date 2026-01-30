@@ -9,8 +9,7 @@ import (
 	"sync"
 
 	"github.com/dop251/goja"
-
-	"github.com/envoyproxy/dynamic-modules-examples/go/gosdk"
+	"github.com/envoyproxy/envoy/source/extensions/dynamic_modules/sdk/go/shared"
 )
 
 const (
@@ -23,15 +22,21 @@ const (
 )
 
 type (
-	// javaScriptFilterConfig implements [gosdk.HttpFilterConfig].
-	javaScriptFilterConfig struct {
+	// javaScriptFilterConfigFactory implements [shared.HttpFilterConfigFactory].
+	javaScriptFilterConfigFactory struct {
+		shared.EmptyHttpFilterConfigFactory
+	}
+	// javaScriptFilterFactory implements [shared.HttpFilterFactory].
+	javaScriptFilterFactory struct {
 		vms [numberOfVMPool]*javaScriptVM
 	}
-	// javaScriptFilter implements [gosdk.HttpFilter].
+	// javaScriptFilter implements [shared.HttpFilter].
 	javaScriptFilter struct {
+		handle          shared.HttpFilterHandle
 		vm              *javaScriptVM
 		requestHeaders  map[string]string
 		responseHeaders map[string]string
+		shared.EmptyHttpFilter
 	}
 	javaScriptVM struct {
 		*goja.Runtime
@@ -41,18 +46,30 @@ type (
 	}
 )
 
-func newJavaScriptFilterConfig(userCode string) gosdk.HttpFilterConfig {
-	c := &javaScriptFilterConfig{}
+// Create implements [shared.HttpFilterConfigFactory].
+func (p *javaScriptFilterConfigFactory) Create(handle shared.HttpFilterConfigHandle, unparsedConfig []byte) (shared.HttpFilterFactory, error) {
+	c := &javaScriptFilterFactory{}
 
 	for i := range numberOfVMPool {
-		vm, err := newJavaScriptVM(userCode, os.Stdout)
+		vm, err := newJavaScriptVM(string(unparsedConfig), os.Stdout)
 		if err != nil {
 			log.Printf("failed to create JavaScript VM: %v", err)
-			return nil
+			return nil, err
 		}
 		c.vms[i] = vm
 	}
-	return c
+	return c, nil
+}
+
+// Create implements [shared.HttpFilterFactory].
+func (p *javaScriptFilterFactory) Create(handle shared.HttpFilterHandle) shared.HttpFilter {
+	vm := p.vms[rand.Intn(numberOfVMPool)]
+	return &javaScriptFilter{
+		handle:          handle,
+		vm:              vm,
+		requestHeaders:  make(map[string]string),
+		responseHeaders: make(map[string]string),
+	}
 }
 
 func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {
@@ -102,17 +119,10 @@ func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {
 	return ret, nil
 }
 
-// NewFilter implements [gosdk.HttpFilterConfig].
-func (p *javaScriptFilterConfig) NewFilter() gosdk.HttpFilter {
-	vm := p.vms[rand.Intn(numberOfVMPool)]
-	return &javaScriptFilter{vm: vm, requestHeaders: make(map[string]string), responseHeaders: make(map[string]string)}
-}
-
-// RequestHeaders implements [gosdk.HttpFilter].
-func (p *javaScriptFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, _ bool) gosdk.RequestHeadersStatus {
-	headers := e.GetRequestHeaders()
-	for k, vs := range headers {
-		p.requestHeaders[k] = vs[0]
+// OnRequestHeaders implements [shared.HttpFilter].
+func (p *javaScriptFilter) OnRequestHeaders(headers shared.HeaderMap, _ bool) shared.HeadersStatus {
+	for _, header := range headers.GetAll() {
+		p.requestHeaders[header[0]] = header[1]
 	}
 	p.vm.mux.Lock()
 	defer p.vm.mux.Unlock()
@@ -132,21 +142,20 @@ func (p *javaScriptFilter) RequestHeaders(e gosdk.EnvoyHttpFilter, _ bool) gosdk
 		key := call.Argument(0).String()
 		value := call.Argument(1).String()
 		p.requestHeaders[key] = value
-		e.SetRequestHeader(key, []byte(value))
+		headers.Set(key, value)
 		return goja.Undefined()
 	})
 	if _, err := vm.onRequestHeaders(goja.Undefined(), obj); err != nil {
 		log.Printf("failed to call %s: %v", javaScriptExportedSymbolOnRequestHeaders, err)
-		return gosdk.RequestHeadersStatusStopIteration
+		return shared.HeadersStatusStop
 	}
-	return gosdk.RequestHeadersStatusContinue
+	return shared.HeadersStatusContinue
 }
 
-// ResponseHeaders implements [gosdk.HttpFilter].
-func (p *javaScriptFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, _ bool) gosdk.ResponseHeadersStatus {
-	headers := e.GetResponseHeaders()
-	for k, vs := range headers {
-		p.responseHeaders[k] = vs[0]
+// OnResponseHeaders implements [shared.HttpFilter].
+func (p *javaScriptFilter) OnResponseHeaders(headers shared.HeaderMap, _ bool) shared.HeadersStatus {
+	for _, header := range headers.GetAll() {
+		p.responseHeaders[header[0]] = header[1]
 	}
 	p.vm.mux.Lock()
 	defer p.vm.mux.Unlock()
@@ -176,31 +185,12 @@ func (p *javaScriptFilter) ResponseHeaders(e gosdk.EnvoyHttpFilter, _ bool) gosd
 		key := call.Argument(0).String()
 		value := call.Argument(1).String()
 		p.responseHeaders[key] = value
-		e.SetResponseHeader(key, []byte(value))
+		headers.Set(key, value)
 		return goja.Undefined()
 	})
 	if _, err := vm.onResponseHeaders(goja.Undefined(), obj); err != nil {
 		log.Printf("failed to call %s: %v", javaScriptExportedSymbolOnResponseHeaders, err)
-		return gosdk.ResponseHeadersStatusStopIteration
+		return shared.HeadersStatusStop
 	}
-	return gosdk.ResponseHeadersStatusContinue
-}
-
-// Destroy implements [gosdk.HttpFilterConfig].
-func (p *javaScriptFilterConfig) Destroy() {}
-
-// Scheduled implements gosdk.HttpFilter.
-func (p *javaScriptFilter) Scheduled(gosdk.EnvoyHttpFilter, uint64) {}
-
-// Destroy implements [gosdk.HttpFilter].
-func (p *javaScriptFilter) Destroy() {}
-
-// RequestBody implements [gosdk.HttpFilter].
-func (p *javaScriptFilter) RequestBody(gosdk.EnvoyHttpFilter, bool) gosdk.RequestBodyStatus {
-	return gosdk.RequestBodyStatusContinue
-}
-
-// ResponseBody implements [gosdk.HttpFilter].
-func (p *javaScriptFilter) ResponseBody(gosdk.EnvoyHttpFilter, bool) gosdk.ResponseBodyStatus {
-	return gosdk.ResponseBodyStatusContinue
+	return shared.HeadersStatusContinue
 }
