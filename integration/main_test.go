@@ -67,6 +67,7 @@ func TestIntegration(t *testing.T) {
 			"--network", "host",
 			"-v", cwd+":/integration",
 			"-w", "/integration",
+			"-e", "GODEBUG=cgocheck=0",
 			"--rm",
 			envoyImage,
 			"--concurrency", "1",
@@ -91,7 +92,10 @@ func TestIntegration(t *testing.T) {
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Env = append(os.Environ(), "ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd)
+		cmd.Env = append(os.Environ(),
+			"ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd,
+			"GODEBUG=cgocheck=0",
+		)
 		require.NoError(t, cmd.Start())
 		defer func() {
 			// Send SIGTERM for graceful shutdown
