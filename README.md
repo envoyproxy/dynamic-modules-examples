@@ -15,12 +15,9 @@ that can be loaded into Envoy at runtime to add custom functionality, for exampl
 It is a new way to extend Envoy without the need to recompile it just like the existing mechanisms
 like Lua filters, Wasm filters, or External Processors.
 
-As of writing, the only official language supported by Envoy is Rust. However, the dynamic module's interface is defined in a plain
-C header file, so technically you can implement a dynamic module in any language that can build shared libraries, such as C, C++, Go, Zig, etc.
 Currently, this repository hosts two language implementations of dynamic modules: Rust and Go.
 * [`rust`](rust): using the official Rust dynamic module SDK.
-* [`go`](go): using the experimental Go dynamic module SDK implemented here. WARNING: This is not an official SDK and is not
-  supported by Envoy main respository. See [issue#25](https://github.com/envoyproxy/dynamic-modules-examples/issues/25) for more details.
+* [`go`](go): using the official Go dynamic module SDK.
 
 This repository serves as a reference for developers who want to create their own dynamic modules for Envoy including
 how to setup the project, how to build it, and how to test it, etc.
