@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package dns_gateway;
+
+message DnsGatewayConfig {
+  // Base IPv4 address for virtual IP allocation (e.g. "10.10.0.0").
+  string base_ip = 1;
+
+  // CIDR prefix length (1-32). A /24 gives 256 IPs.
+  uint32 prefix_len = 2;
+
+  // Each entry defines a domain pattern and associated metadata.
+  repeated DomainMatcher domains = 3;
+}
+
+message DomainMatcher {
+  // Exact domain ("example.com") or wildcard pattern ("*.example.com").
+  string domain = 1;
+
+  // String key-value pairs exposed in Envoy filter state as `envoy.dns_gateway.metadata.<key>.`
+  map<string, string> metadata = 2;
+}
