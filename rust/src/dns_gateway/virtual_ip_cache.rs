@@ -88,7 +88,8 @@ impl VirtualIpCache {
                 if *offset >= self.capacity {
                     envoy_log_error!(
                         "IP allocation exhausted, tried to allocate #{} but max is {}",
-                        *offset, self.capacity
+                        *offset,
+                        self.capacity
                     );
                     return None;
                 }

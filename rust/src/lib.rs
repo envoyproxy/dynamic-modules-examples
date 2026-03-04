@@ -111,8 +111,6 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
     }
 }
 
-
-
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::NewNetworkFilterConfigFunction`].
 ///
 /// This is the entrypoint every time a new Network filter is created via the DynamicModuleNetworkFilter config.
@@ -127,10 +125,11 @@ fn new_network_filter_config_fn<EC: EnvoyNetworkFilterConfig, ENF: EnvoyNetworkF
     filter_config: &[u8],
 ) -> Option<Box<dyn NetworkFilterConfig<ENF>>> {
     match filter_name {
-        "cache_lookup" => {
-            Some(Box::new(dns_gateway::cache_lookup::CacheLookupFilterConfig::new(filter_config))
-                as Box<dyn NetworkFilterConfig<ENF>>)
-        }
+        "cache_lookup" => Some(
+            Box::new(dns_gateway::cache_lookup::CacheLookupFilterConfig::new(
+                filter_config,
+            )) as Box<dyn NetworkFilterConfig<ENF>>,
+        ),
         _ => panic!("Unknown network filter name: {filter_name}"),
     }
 }
