@@ -83,7 +83,7 @@ No configuration. Use `filter_config: {}`.
 
 ## Manual testing
 
-End-to-end test with docker-compose. I recommend using a clean linux VM for this.
+End-to-end test with docker-compose.
 
 Create the following files:
 
@@ -235,7 +235,7 @@ static_resources:
                   do_not_close: true
                 filter_name: cache_lookup
                 filter_config: {}
-            # IMPORTANT! Setting an upstream cluster directly in TCP proxy config with FILTER_STATE(...)
+            # Setting an upstream cluster directly in the TCP proxy tunneling config with FILTER_STATE(...)
             # is not supported. Instead, write the value of FILTER_STATE(...) to 'envoy.tcp_proxy.cluster'
             - name: envoy.filters.network.set_filter_state
               typed_config:
@@ -312,7 +312,6 @@ dig github.com
 
 # Will reach cluster_1
 curl http://s3.aws.com./
-# Note that the trailing dot is necessary, Coder might try and append extra parts to the domain because of ndots funkiness
 
 # Will reach cluster_2
 curl http://example.com./
