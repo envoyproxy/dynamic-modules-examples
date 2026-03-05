@@ -3,12 +3,9 @@
 //! This filter demonstrates:
 //! 1. UDP listener filter structure with `UdpListenerFilterConfig` and `UdpListenerFilter` traits.
 //! 2. DNS query parsing and response.
-//! 3. Using protobof for configuration.
-//!
-//! See dns_gateway.proto for the protobuf definitions of the config.
 
 pub mod cache_lookup;
-mod proto;
+mod config;
 mod virtual_ip_cache;
 
 use envoy_proxy_dynamic_modules_rust_sdk::*;
@@ -74,7 +71,7 @@ impl DnsGatewayFilterConfig {
         };
         let value = &config_json["value"];
 
-        let proto_config: proto::DnsGatewayConfig = match serde_json::from_value(value.clone()) {
+        let gateway_config: config::DnsGatewayConfig = match serde_json::from_value(value.clone()) {
             Ok(cfg) => cfg,
             Err(err) => {
                 eprintln!("Error parsing DnsGatewayConfig: {err}");
@@ -82,11 +79,11 @@ impl DnsGatewayFilterConfig {
             }
         };
 
-        if proto_config.base_ip.is_empty() {
+        if gateway_config.base_ip.is_empty() {
             eprintln!("base_ip is required for DNS gateway");
             return None;
         }
-        let base_ip: Ipv4Addr = match proto_config.base_ip.parse() {
+        let base_ip: Ipv4Addr = match gateway_config.base_ip.parse() {
             Ok(ip) => ip,
             Err(err) => {
                 eprintln!("Invalid base_ip: {err}");
@@ -94,7 +91,7 @@ impl DnsGatewayFilterConfig {
             }
         };
 
-        let prefix_len = match u8::try_from(proto_config.prefix_len) {
+        let prefix_len = match u8::try_from(gateway_config.prefix_len) {
             Ok(v) => v,
             Err(err) => {
                 eprintln!("Invalid prefix_len: {err}");
@@ -108,7 +105,7 @@ impl DnsGatewayFilterConfig {
 
         init_cache(u32::from(base_ip), prefix_len);
 
-        let domains: Arc<[DomainMatcher]> = proto_config
+        let domains: Arc<[DomainMatcher]> = gateway_config
             .domains
             .into_iter()
             .map(|d| DomainMatcher {
@@ -397,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_config_parsing_missing_prefix_len() {
-        // proto3 defaults missing uint32 to 0, which fails the 1..=32 range check.
+        // serde defaults missing uint32 to 0, which fails the 1..=32 range check.
         let config = r#"{
             "value": {
                 "base_ip": "10.10.0.0",
