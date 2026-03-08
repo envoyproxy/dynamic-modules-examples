@@ -6,9 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -26,12 +28,15 @@ func TestIntegration(t *testing.T) {
 
 	// Setup the httpbin upstream local server.
 	httpbinHandler := httpbin.New()
-	server := &http.Server{Addr: ":1234", Handler: httpbinHandler,
+	server := &http.Server{Handler: httpbinHandler,
 		ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
+	// Use tcp4 to avoid conflicting with any IPv6-only service already on :1234.
+	httpbinListener, err := net.Listen("tcp4", ":1234")
+	require.NoError(t, err)
 	go func() {
-		if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.Serve(httpbinListener); err != nil && err != http.ErrServerClosed {
 			t.Logf("HTTP server error: %v", err)
 		}
 	}()
@@ -43,7 +48,7 @@ func TestIntegration(t *testing.T) {
 
 	// Health check to ensure the server is up before starting tests.
 	require.Eventually(t, func() bool {
-		resp, err := http.Get("http://localhost:1234/uuid")
+		resp, err := http.Get("http://127.0.0.1:1234/uuid")
 		if err != nil {
 			t.Logf("httpbin server not ready yet: %v", err)
 			return false
@@ -59,6 +64,11 @@ func TestIntegration(t *testing.T) {
 	require.NoError(t, os.RemoveAll(accessLogsDir))
 	require.NoError(t, os.Mkdir(accessLogsDir, 0o700))
 	require.NoError(t, os.Chmod(accessLogsDir, 0o777))
+
+	// Detect the JVM server library directory so librust_module.so can dlopen
+	// libjvm.so when the java_filter initialises the embedded JVM.
+	jvmLibPath := jvmServerLibPath(t)
+	t.Logf("JVM lib path: %s", jvmLibPath)
 
 	if envoyImage := cmp.Or(os.Getenv("ENVOY_IMAGE")); envoyImage != "" {
 		cmd := exec.Command(
@@ -92,9 +102,15 @@ func TestIntegration(t *testing.T) {
 
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		existingLD := os.Getenv("LD_LIBRARY_PATH")
+		ldLibPath := jvmLibPath
+		if existingLD != "" {
+			ldLibPath = jvmLibPath + ":" + existingLD
+		}
 		cmd.Env = append(os.Environ(),
 			"ENVOY_DYNAMIC_MODULES_SEARCH_PATH="+cwd,
 			"GODEBUG=cgocheck=0",
+			"LD_LIBRARY_PATH="+ldLibPath,
 		)
 		require.NoError(t, cmd.Start())
 		defer func() {
@@ -422,6 +438,47 @@ func TestIntegration(t *testing.T) {
 		}, 30*time.Second, 200*time.Millisecond)
 	})
 
+	t.Run("java_filter", func(t *testing.T) {
+		require.Eventually(t, func() bool {
+			req, err := http.NewRequest("GET", "http://127.0.0.1:1065/headers", nil)
+			require.NoError(t, err)
+
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Logf("Envoy not ready yet: %v", err)
+				return false
+			}
+
+			t.Logf("response: headers=%v, body=%s", resp.Header, string(body))
+			require.Equal(t, 200, resp.StatusCode)
+
+			// httpbin echoes request headers back as JSON.
+			type httpBinHeadersBody struct {
+				Headers map[string][]string `json:"headers"`
+			}
+			var headersBody httpBinHeadersBody
+			require.NoError(t, json.Unmarshal(body, &headersBody))
+
+			// ExampleFilter adds x-java-filter: active to every request.
+			require.Contains(t, headersBody.Headers["X-Java-Filter"], "active",
+				"x-java-filter request header should be set by the Java filter")
+
+			// ExampleFilter mirrors the :path back as x-java-filter-path on the response.
+			require.Equal(t, "/headers", resp.Header.Get("x-java-filter-path"),
+				"x-java-filter-path response header should mirror the request :path")
+
+			return true
+		}, 30*time.Second, 200*time.Millisecond)
+	})
+
 	t.Run("http_metrics", func(t *testing.T) {
 		// Send test request
 		require.Eventually(t, func() bool {
@@ -494,4 +551,31 @@ func TestIntegration(t *testing.T) {
 			return false
 		}, 5*time.Second, 200*time.Millisecond)
 	})
+}
+
+// jvmServerLibPath returns the directory containing libjvm.so, needed by the
+// java_filter at runtime so the Rust module can dlopen the JVM.
+// It first checks $JAVA_HOME, then falls back to running `java -XshowSettings:all -version`.
+func jvmServerLibPath(t *testing.T) string {
+	t.Helper()
+	javaHome := os.Getenv("JAVA_HOME")
+	if javaHome == "" {
+		out, err := exec.Command("java", "-XshowSettings:all", "-version").CombinedOutput()
+		if err == nil {
+			for _, line := range strings.Split(string(out), "\n") {
+				if strings.Contains(line, "java.home") {
+					parts := strings.SplitN(line, "=", 2)
+					if len(parts) == 2 {
+						javaHome = strings.TrimSpace(parts[1])
+						break
+					}
+				}
+			}
+		}
+	}
+	if javaHome == "" {
+		t.Log("JAVA_HOME not set and could not be detected; java_filter may fail to load libjvm.so")
+		return ""
+	}
+	return filepath.Join(javaHome, "lib", "server")
 }

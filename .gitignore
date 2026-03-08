@@ -7,3 +7,5 @@ bazel-*
 access_logs/
 
 *.so
+
+*.jar
