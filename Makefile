@@ -98,8 +98,10 @@ build-rust: ## Build the Rust dynamic module.
 	@cd rust && cargo build
 	@$(call print_success,Rust dynamic module built at rust/target/debug/librust_module.so)
 	@$(call print_task,Copying Rust dynamic module for easier use with Envoy)
-	@cp rust/target/debug/librust_module.dylib integration/librust_module.so || true
-	@cp rust/target/debug/librust_module.so integration/librust_module.so || true
+	@test -f rust/target/debug/librust_module.so || test -f rust/target/debug/librust_module.dylib || { echo "ERROR: No dynamic module found in rust/target/debug/"; exit 1; }
+	@cp rust/target/debug/librust_module.so integration/librust_module.so 2>/dev/null || \
+	 cp rust/target/debug/librust_module.dylib integration/librust_module.so 2>/dev/null || \
+	 (echo "ERROR: Module not found"; exit 1)
 
 .PHONY: integration-test
 integration-test: build-go build-rust ## Run the integration tests.
