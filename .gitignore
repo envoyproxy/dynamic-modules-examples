@@ -9,3 +9,4 @@ access_logs/
 *.so
 
 *.jar
+java/out
