@@ -82,7 +82,7 @@ test-rust: ## Run the unit tests for the Rust codebase.
 	@$(call print_success,Rust unit tests completed)
 
 .PHONY: build
-build: build-go build-rust ## Build all dynamic modules.
+build: build-go build-rust build-java ## Build all dynamic modules.
 
 .PHONY: build-go
 build-go: ## Build the Go dynamic module.
@@ -91,6 +91,14 @@ build-go: ## Build the Go dynamic module.
 	@$(call print_success,Go dynamic module built at go/libgo_module.so)
 	@$(call print_task,Copying Go dynamic module for easier use with Envoy)
 	@cp go/libgo_module.so integration/libgo_module.so
+
+.PHONY: build-java
+build-java: ## Build the Java filter JAR and copy it to the integration directory.
+	@$(call print_task,Building Java filter JAR)
+	@make -C java
+	@$(call print_success,Java filter JAR built at java/out/envoy-java-filter.jar)
+	@$(call print_task,Copying Java filter JAR for use with Envoy)
+	@cp java/out/envoy-java-filter.jar integration/envoy-java-filter.jar
 
 .PHONY: build-rust
 build-rust: ## Build the Rust dynamic module.
@@ -102,7 +110,7 @@ build-rust: ## Build the Rust dynamic module.
 	@cp rust/target/debug/librust_module.so integration/librust_module.so || true
 
 .PHONY: integration-test
-integration-test: build-go build-rust ## Run the integration tests.
+integration-test: build-go build-rust build-java ## Run the integration tests.
 	@$(call print_task,Running integration tests)
 	@cd integration && go test -v ./...
 	@$(call print_success,Integration tests completed)

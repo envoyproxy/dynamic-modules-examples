@@ -40,6 +40,7 @@ use envoy_proxy_dynamic_modules_rust_sdk::*;
 // HTTP filter examples.
 mod http_access_logger;
 mod http_header_mutation;
+mod http_java_filter;
 mod http_metrics;
 mod http_passthrough;
 mod http_random_auth;
@@ -98,6 +99,8 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
         "header_mutation" => http_header_mutation::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         "metrics" => http_metrics::FilterConfig::new(filter_config, envoy_filter_config)
+            .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
+        "java_filter" => http_java_filter::FilterConfig::new(filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         _ => panic!("Unknown filter name: {filter_name}"),
     }
