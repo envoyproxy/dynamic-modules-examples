@@ -12,8 +12,6 @@ Requires iptables/nftables rules to redirect application traffic to Envoy:
 - **DNS**: UDP port 53 redirected to Envoy's DNS listener (e.g. port 15053)
 - **TCP**: Outbound connections redirected to Envoy's TCP listener (e.g. port 15001)
 
-See [`connectivity-iptables`](../../../../../connectivity-iptables) for setup scripts.
-
 ## How it works
 
 1. **`dns_gateway`** (UDP listener filter) — Intercepts DNS queries. If the queried domain matches
