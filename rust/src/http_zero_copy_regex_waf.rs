@@ -70,7 +70,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
             .expect("Failed to do regex match");
         if matched {
             // If the regex matches, we send a 403 response.
-            envoy_filter.send_response(403, vec![], Some(b"Access forbidden"), None);
+            envoy_filter.send_response(403, &[], Some(b"Access forbidden"), None);
             return abi::envoy_dynamic_module_type_on_http_filter_request_body_status::StopIterationNoBuffer;
         }
         abi::envoy_dynamic_module_type_on_http_filter_request_body_status::Continue
@@ -141,8 +141,8 @@ mod tests {
                 static mut HELLO: [u8; 6] = *b"Hello ";
                 static mut WORLD: [u8; 6] = *b"World!";
                 Some(vec![
-                    EnvoyMutBuffer::new(unsafe { &mut HELLO }),
-                    EnvoyMutBuffer::new(unsafe { &mut WORLD }),
+                    unsafe { EnvoyMutBuffer::new(&raw mut HELLO) },
+                    unsafe { EnvoyMutBuffer::new(&raw mut WORLD) },
                 ])
             })
             .times(1);
@@ -160,8 +160,8 @@ mod tests {
                 static mut GOOD: [u8; 5] = *b"Good ";
                 static mut MORNING: [u8; 8] = *b"Morning!";
                 Some(vec![
-                    EnvoyMutBuffer::new(unsafe { &mut GOOD }),
-                    EnvoyMutBuffer::new(unsafe { &mut MORNING }),
+                    unsafe { EnvoyMutBuffer::new(&raw mut GOOD) },
+                    unsafe { EnvoyMutBuffer::new(&raw mut MORNING) },
                 ])
             })
             .times(1);
