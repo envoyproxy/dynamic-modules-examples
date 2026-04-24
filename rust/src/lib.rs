@@ -1,3 +1,5 @@
+#![allow(unpredictable_function_pointer_comparisons)] // <- can be removed once https://github.com/envoyproxy/envoy/pull/44654 is released
+
 //! Envoy Dynamic Modules Rust SDK Examples
 //!
 //! This crate contains example implementations of Envoy dynamic modules using the Rust SDK.
