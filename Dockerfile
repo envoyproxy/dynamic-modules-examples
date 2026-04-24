@@ -42,6 +42,7 @@ RUN curl -L "https://ziglang.org/download/${ZIG_VERSION}/zig-linux-$(uname -m)-$
 RUN mkdir /build
 COPY ./go /build
 WORKDIR /build
+ENV CGO_LDFLAGS_DISALLOW="-Wl,--unresolved-symbols.*"
 RUN CC="zig cc -target aarch64-linux-gnu" CXX="zig c++ -target aarch64-linux-gnu" CGO_ENABLED=1 GOARCH=arm64 go build -buildmode=c-shared -o /build/arm64_libgo_module.so .
 RUN CC="zig cc -target x86_64-linux-gnu" CXX="zig c++ -target x86_64-linux-gnu" CGO_ENABLED=1 GOARCH=amd64 go build -buildmode=c-shared -o /build/amd64_libgo_module.so .
 
