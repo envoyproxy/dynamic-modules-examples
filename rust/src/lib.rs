@@ -60,7 +60,14 @@ pub mod listener_ip_allowlist;
 pub mod listener_sni_router;
 pub mod listener_tls_detector;
 
-declare_init_functions!(init, new_http_filter_config_fn);
+// DNS gateway filter examples.
+pub mod dns_gateway;
+
+declare_all_init_functions!(init,
+    http: new_http_filter_config_fn,
+    network: new_network_filter_config_fn,
+    udp_listener: new_udp_listener_filter_config_fn
+);
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::ProgramInitFunction`].
 ///
@@ -100,5 +107,35 @@ fn new_http_filter_config_fn<EC: EnvoyHttpFilterConfig, EHF: EnvoyHttpFilter>(
         "metrics" => http_metrics::FilterConfig::new(filter_config, envoy_filter_config)
             .map(|config| Box::new(config) as Box<dyn HttpFilterConfig<EHF>>),
         _ => panic!("Unknown filter name: {filter_name}"),
+    }
+}
+
+fn new_network_filter_config_fn<EC: EnvoyNetworkFilterConfig, ENF: EnvoyNetworkFilter>(
+    _envoy_filter_config: &mut EC,
+    filter_name: &str,
+    filter_config: &[u8],
+) -> Option<Box<dyn NetworkFilterConfig<ENF>>> {
+    match filter_name {
+        "cache_lookup" => Some(Box::new(
+            dns_gateway::cache_lookup::CacheLookupFilterConfig::new(filter_config),
+        )),
+        _ => panic!("Unknown network filter name: {filter_name}"),
+    }
+}
+
+fn new_udp_listener_filter_config_fn<
+    EC: EnvoyUdpListenerFilterConfig,
+    ELF: EnvoyUdpListenerFilter,
+>(
+    _envoy_filter_config: &mut EC,
+    filter_name: &str,
+    filter_config: &[u8],
+) -> Option<Box<dyn UdpListenerFilterConfig<ELF>>> {
+    match filter_name {
+        "dns_gateway" => {
+            let config = dns_gateway::DnsGatewayFilterConfig::new(filter_config)?;
+            Some(Box::new(config))
+        }
+        _ => panic!("Unknown UDP listener filter name: {filter_name}"),
     }
 }
