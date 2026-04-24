@@ -61,6 +61,9 @@ func (p *javaScriptFilterConfigFactory) Create(handle shared.HttpFilterConfigHan
 	return c, nil
 }
 
+// OnDestroy implements [shared.HttpFilterFactory].
+func (p *javaScriptFilterFactory) OnDestroy() {}
+
 // Create implements [shared.HttpFilterFactory].
 func (p *javaScriptFilterFactory) Create(handle shared.HttpFilterHandle) shared.HttpFilter {
 	vm := p.vms[rand.Intn(numberOfVMPool)]
@@ -122,7 +125,7 @@ func newJavaScriptVM(script string, w io.Writer) (*javaScriptVM, error) {
 // OnRequestHeaders implements [shared.HttpFilter].
 func (p *javaScriptFilter) OnRequestHeaders(headers shared.HeaderMap, _ bool) shared.HeadersStatus {
 	for _, header := range headers.GetAll() {
-		p.requestHeaders[header[0]] = header[1]
+		p.requestHeaders[header[0].ToString()] = header[1].ToString()
 	}
 	p.vm.mux.Lock()
 	defer p.vm.mux.Unlock()
@@ -155,7 +158,7 @@ func (p *javaScriptFilter) OnRequestHeaders(headers shared.HeaderMap, _ bool) sh
 // OnResponseHeaders implements [shared.HttpFilter].
 func (p *javaScriptFilter) OnResponseHeaders(headers shared.HeaderMap, _ bool) shared.HeadersStatus {
 	for _, header := range headers.GetAll() {
-		p.responseHeaders[header[0]] = header[1]
+		p.responseHeaders[header[0].ToString()] = header[1].ToString()
 	}
 	p.vm.mux.Lock()
 	defer p.vm.mux.Unlock()

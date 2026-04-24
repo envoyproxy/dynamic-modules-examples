@@ -35,6 +35,9 @@ func (p *delayFilterFactory) Create(handle shared.HttpFilterHandle) shared.HttpF
 	return &delayFilter{handle: handle}
 }
 
+// OnDestroy implements [shared.HttpFilterFactory].
+func (p *delayFilterFactory) OnDestroy() {}
+
 // OnRequestHeaders implements [shared.HttpFilter].
 func (p *delayFilter) OnRequestHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
 	// Check if the headers contain the "do-delay" header to trigger the delay.

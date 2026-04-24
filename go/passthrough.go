@@ -30,20 +30,23 @@ func (p *passthroughFilterFactory) Create(handle shared.HttpFilterHandle) shared
 	return &passthroughFilter{handle: handle}
 }
 
+// OnDestroy implements [shared.HttpFilterFactory].
+func (p *passthroughFilterFactory) OnDestroy() {}
+
 // OnRequestHeaders implements [shared.HttpFilter].
 func (p *passthroughFilter) OnRequestHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
 	fooValue := headers.GetOne("foo")
-	fmt.Printf("gosdk: RequestHeaders, foo: %v\n", fooValue)
+	fmt.Printf("gosdk: RequestHeaders, foo: %v\n", fooValue.ToString())
 	fmt.Printf("gosdk: RequestHeaders, endOfStream: %v\n", endOfStream)
 	for _, header := range headers.GetAll() {
-		fmt.Printf("gosdk: RequestHeaders, header: %s: %s\n", header[0], header[1])
+		fmt.Printf("gosdk: RequestHeaders, header: %s: %s\n", header[0].ToString(), header[1].ToString())
 	}
 	sourceAddr, _ := p.handle.GetAttributeString(shared.AttributeIDSourceAddress)
 	destAddr, _ := p.handle.GetAttributeString(shared.AttributeIDDestinationAddress)
 	protocol, _ := p.handle.GetAttributeString(shared.AttributeIDRequestProtocol)
-	fmt.Printf("gosdk: RequestHeaders, source address: %s\n", sourceAddr)
-	fmt.Printf("gosdk: RequestHeaders, destination address: %s\n", destAddr)
-	fmt.Printf("gosdk: RequestHeaders, request protocol: %s\n", protocol)
+	fmt.Printf("gosdk: RequestHeaders, source address: %s\n", sourceAddr.ToString())
+	fmt.Printf("gosdk: RequestHeaders, destination address: %s\n", destAddr.ToString())
+	fmt.Printf("gosdk: RequestHeaders, request protocol: %s\n", protocol.ToString())
 	return shared.HeadersStatusContinue
 }
 
@@ -57,7 +60,7 @@ func (p *passthroughFilter) OnRequestBody(body shared.BodyBuffer, endOfStream bo
 	chunks := body.GetChunks()
 	var original []byte
 	for _, chunk := range chunks {
-		original = append(original, chunk...)
+		original = append(original, chunk.ToBytes()...)
 	}
 	fmt.Printf("gosdk: RequestBody, body: %s\n", original)
 	body.Drain(uint64(len(original)))
@@ -65,7 +68,7 @@ func (p *passthroughFilter) OnRequestBody(body shared.BodyBuffer, endOfStream bo
 	chunks = body.GetChunks()
 	var modified []byte
 	for _, chunk := range chunks {
-		modified = append(modified, chunk...)
+		modified = append(modified, chunk.ToBytes()...)
 	}
 	if string(modified) != "hello world" {
 		panic("request body should be modified")
@@ -77,7 +80,7 @@ func (p *passthroughFilter) OnRequestBody(body shared.BodyBuffer, endOfStream bo
 	chunks = body.GetChunks()
 	modified = nil
 	for _, chunk := range chunks {
-		modified = append(modified, chunk...)
+		modified = append(modified, chunk.ToBytes()...)
 	}
 	if string(modified) != string(original) {
 		panic("request body should be modified")
@@ -88,13 +91,13 @@ func (p *passthroughFilter) OnRequestBody(body shared.BodyBuffer, endOfStream bo
 // OnResponseHeaders implements [shared.HttpFilter].
 func (p *passthroughFilter) OnResponseHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
 	status := headers.GetOne(":status")
-	if status == "" {
+	if status.Len == 0 {
 		panic("x-status header should be set")
 	}
-	fmt.Printf("gosdk: ResponseHeaders, status: %v\n", status)
+	fmt.Printf("gosdk: ResponseHeaders, status: %v\n", status.ToString())
 	headers.Set("x-passthrough-response-header", "true")
 	for _, header := range headers.GetAll() {
-		fmt.Printf("gosdk: ResponseHeaders, header: %s: %s\n", header[0], header[1])
+		fmt.Printf("gosdk: ResponseHeaders, header: %s: %s\n", header[0].ToString(), header[1].ToString())
 	}
 	return shared.HeadersStatusContinue
 }
@@ -109,7 +112,7 @@ func (p *passthroughFilter) OnResponseBody(body shared.BodyBuffer, endOfStream b
 	chunks := body.GetChunks()
 	var original []byte
 	for _, chunk := range chunks {
-		original = append(original, chunk...)
+		original = append(original, chunk.ToBytes()...)
 	}
 	fmt.Printf("gosdk: ResponseBody, body: %s\n", original)
 	body.Drain(uint64(len(original)))
@@ -117,7 +120,7 @@ func (p *passthroughFilter) OnResponseBody(body shared.BodyBuffer, endOfStream b
 	chunks = body.GetChunks()
 	var modified []byte
 	for _, chunk := range chunks {
-		modified = append(modified, chunk...)
+		modified = append(modified, chunk.ToBytes()...)
 	}
 	if string(modified) != "hello world" {
 		panic("response body should be modified")
@@ -128,7 +131,7 @@ func (p *passthroughFilter) OnResponseBody(body shared.BodyBuffer, endOfStream b
 	chunks = body.GetChunks()
 	modified = nil
 	for _, chunk := range chunks {
-		modified = append(modified, chunk...)
+		modified = append(modified, chunk.ToBytes()...)
 	}
 	if string(modified) != string(original) {
 		panic("response body should be modified")
