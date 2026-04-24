@@ -70,7 +70,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
             .expect("Failed to do regex match");
         if matched {
             // If the regex matches, we send a 403 response.
-            envoy_filter.send_response(403, vec![], Some(b"Access forbidden"), None);
+            envoy_filter.send_response(403, &[], Some(b"Access forbidden"), None);
             return abi::envoy_dynamic_module_type_on_http_filter_request_body_status::StopIterationNoBuffer;
         }
         abi::envoy_dynamic_module_type_on_http_filter_request_body_status::Continue

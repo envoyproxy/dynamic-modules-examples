@@ -60,7 +60,7 @@ pub mod listener_ip_allowlist;
 pub mod listener_sni_router;
 pub mod listener_tls_detector;
 
-declare_init_functions!(init, new_http_filter_config_fn);
+declare_all_init_functions!(init, http: new_http_filter_config_fn);
 
 /// This implements the [`envoy_proxy_dynamic_modules_rust_sdk::ProgramInitFunction`].
 ///
