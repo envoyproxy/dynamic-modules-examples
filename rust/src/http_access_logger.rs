@@ -186,10 +186,13 @@ mod tests {
         let mut envoy_filter = envoy_proxy_dynamic_modules_rust_sdk::MockEnvoyHttpFilter::new();
         envoy_filter
             .expect_get_request_headers()
-            .returning(|| vec![(EnvoyBuffer::new("host"), EnvoyBuffer::new("example.com"))]);
-        envoy_filter
-            .expect_get_response_headers()
-            .returning(|| vec![(EnvoyBuffer::new("content-length"), EnvoyBuffer::new("123"))]);
+            .returning(|| vec![(EnvoyBuffer::new(b"host"), EnvoyBuffer::new(b"example.com"))]);
+        envoy_filter.expect_get_response_headers().returning(|| {
+            vec![(
+                EnvoyBuffer::new(b"content-length"),
+                EnvoyBuffer::new(b"123"),
+            )]
+        });
         access_logger_filter.on_request_headers(&mut envoy_filter, false);
         access_logger_filter.on_response_headers(&mut envoy_filter, false);
 

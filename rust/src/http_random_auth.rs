@@ -37,7 +37,7 @@ impl<EHF: EnvoyHttpFilter> HttpFilter<EHF> for Filter {
     ) -> abi::envoy_dynamic_module_type_on_http_filter_request_headers_status {
         let reject = rand::rng().random::<bool>();
         if reject {
-            envoy_filter.send_response(403, vec![], Some(b"Access forbidden"), None);
+            envoy_filter.send_response(403, &[], Some(b"Access forbidden"), None);
             return abi::envoy_dynamic_module_type_on_http_filter_request_headers_status::StopIteration;
         }
         abi::envoy_dynamic_module_type_on_http_filter_request_headers_status::Continue

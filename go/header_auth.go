@@ -36,14 +36,17 @@ func (p *headerAuthFilterFactory) Create(handle shared.HttpFilterHandle) shared.
 	return &headerAuthFilter{handle: handle, authHeaderName: p.authHeaderName}
 }
 
+// OnDestroy implements [shared.HttpFilterFactory].
+func (p *headerAuthFilterFactory) OnDestroy() {}
+
 // OnRequestHeaders implements [shared.HttpFilter].
 func (p *headerAuthFilter) OnRequestHeaders(headers shared.HeaderMap, endOfStream bool) shared.HeadersStatus {
 	v := headers.GetOne(p.authHeaderName)
-	if v == "" {
+	if v.Len == 0 {
 		p.handle.SendLocalResponse(http.StatusUnauthorized, [][2]string{{"Content-Type", "text/plain"}}, []byte("Unauthorized by Go Module at on_request_headers\n"), "unauthorized")
 		return shared.HeadersStatusStop
 	}
-	p.sendOnResponseHeaderPhase = v == "on_response_headers"
+	p.sendOnResponseHeaderPhase = v.ToString() == "on_response_headers"
 	return shared.HeadersStatusContinue
 }
 

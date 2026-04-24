@@ -1,6 +1,6 @@
 # Dynamic Modules Examples
 
-> Envoy Version: v1.37.0
+> Envoy Version: v1.38.0
 >
 > Since dynamic modules are tied with a specific Envoy version, this repository is based on the specific commit of Envoy.
 > For examples for a specific Envoy version, please check out `release/v<version>` branches:

@@ -118,10 +118,10 @@ mod tests {
             .expect_get_attribute_string()
             .returning(|id| match id {
                 abi::envoy_dynamic_module_type_attribute_id::SourceAddress => {
-                    return Some(EnvoyBuffer::new("1.1.1.1:12345"));
+                    return Some(EnvoyBuffer::new(b"1.1.1.1:12345"));
                 }
                 abi::envoy_dynamic_module_type_attribute_id::UpstreamAddress => {
-                    return Some(EnvoyBuffer::new("2.2.2.2:12345"));
+                    return Some(EnvoyBuffer::new(b"2.2.2.2:12345"));
                 }
                 _ => panic!("Unexpected attribute id"),
             });

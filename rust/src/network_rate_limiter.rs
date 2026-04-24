@@ -218,16 +218,16 @@ impl<ENF: EnvoyNetworkFilter> NetworkFilter<ENF> for RateLimiterFilter {
     ) {
         match event {
             abi::envoy_dynamic_module_type_network_connection_event::RemoteClose
-            | abi::envoy_dynamic_module_type_network_connection_event::LocalClose => {
-                if self.connection_counted {
-                    let previous = self
-                        .shared_state
-                        .active_connections
-                        .fetch_sub(1, Ordering::SeqCst);
-                    let _ = envoy_filter
-                        .set_gauge(self.active_connections_gauge, previous.saturating_sub(1));
-                    envoy_log_debug!("Connection closed. Active connections: {}", previous - 1);
-                }
+            | abi::envoy_dynamic_module_type_network_connection_event::LocalClose
+                if self.connection_counted =>
+            {
+                let previous = self
+                    .shared_state
+                    .active_connections
+                    .fetch_sub(1, Ordering::SeqCst);
+                let _ = envoy_filter
+                    .set_gauge(self.active_connections_gauge, previous.saturating_sub(1));
+                envoy_log_debug!("Connection closed. Active connections: {}", previous - 1);
             }
             _ => {}
         }
